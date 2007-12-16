@@ -45,7 +45,7 @@ public class Scanner {
     private static const SPACES_AND_STUFF : String = "'\"\\\x00 \t\r\n\u0085";
     private static const DOUBLE_ESC : String = "\"\\";
     private static const NON_ALPHA_OR_NUM : String = "\x00 \t\r\n\u0085?:,]}%@`";
-    private static const NON_PRINTABLE : RegExp = new RegExp("[^\u0009\n\r\u0020-\u007E\u0085\u00A0-\u00FF]");
+    private static const NON_PRINTABLE : RegExp = new RegExp("[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\uD7FF\uE000-\uFFFD]");
     private static const NOT_HEXA : RegExp = new RegExp("[^0-9A-Fa-f]");
     private static const NON_ALPHA : RegExp = new RegExp("[^-0-9A-Za-z_]");
     private static const R_FLOWZERO : RegExp = new RegExp(/[\x00 \t\r\n\u0085]|(:[\x00 \t\r\n\u0028])/);
@@ -225,7 +225,7 @@ public class Scanner {
     }
 
     private function checkPrintable(data : String) : void {
-        var match : Object  = NON_PRINTABLE.exec(data);
+        var match : Object = NON_PRINTABLE.exec(data);
         if(match) {
             var position : int = this.buffer.length - this.pointer + match.index;
             throw new YAMLException("At " + position + " we found: " + match.index + ". Special characters are not allowed");
