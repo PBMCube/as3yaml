@@ -525,7 +525,8 @@ package org.as3yaml.test
 			assertEquals(map4.get("y"), map1.get("y"));
 			assertEquals(map2.get("r"), 10);
 			assertEquals(map2.get("r"), map3.get("r"));
-		}	
+		}
+		
 		   	
 	}
 }
