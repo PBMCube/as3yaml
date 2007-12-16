@@ -13,7 +13,8 @@
 						
 				suite.addTestSuite(YamlLoadTest);
 				suite.addTestSuite(YamlComplexLoadTest);
-				suite.addTestSuite(YamlDumpTest);			
+				suite.addTestSuite(YamlDumpTest);	
+				suite.addTestSuite(IssuesTest);		
 				
 				runner.test = suite;			
 				runner.startTest();
