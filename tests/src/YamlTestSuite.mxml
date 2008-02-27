@@ -21,8 +21,6 @@
 				runner.test = suite;			
 				runner.startTest();
 				
-				new ObjectProxy
-		
 			}
 			
 		]]>
