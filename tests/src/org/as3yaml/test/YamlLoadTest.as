@@ -3,12 +3,12 @@ package org.as3yaml.test
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
-	import flash.display.Loader;
 	import flash.display.LoaderInfo;
 	import flash.events.Event;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
 	
 	import flexunit.framework.TestCase;
 	
@@ -16,12 +16,8 @@ package org.as3yaml.test
 	import mx.controls.*;
 	import mx.core.Application;
 	import mx.managers.PopUpManager;
-	import mx.rpc.events.ResultEvent;
-	import mx.rpc.http.HTTPService;
 	
 	import org.as3yaml.YAML;
-	import org.idmedia.as3commons.util.HashMap;
-	import org.idmedia.as3commons.util.Map;
 
 	public class YamlLoadTest extends TestCase
 	{
@@ -62,20 +58,14 @@ package org.as3yaml.test
 		
 		public function testBlockMappingLoad() : void 
 		{
-		    var expected : Map = new HashMap();
-		    expected.put("a","b");
-		    expected.put("c","d");
-		    assertEquals("b", HashMap(YAML.decode("a: b\nc: d")).get("a"));
-		    assertEquals("d" , HashMap(YAML.decode("c: d\na: b\n")).get("c"));
+		    assertEquals("b",  YAML.decode("a: b\nc: d").a);
+		    assertEquals("d" , YAML.decode("c: d\na: b\n").c);
 		}
 		
 		public function testFlowMappingLoad() : void 
 		{
-		    var expected : Map = new HashMap();
-		    expected.put("a","b");
-		    expected.put("c","d");
-		    assertEquals("b", HashMap(YAML.decode("{a: b, c: d}")).get("a"));
-		    assertEquals("d" , HashMap(YAML.decode("{c: d,\na: b}")).get("c"));
+		    assertEquals("b", Dictionary(YAML.decode("{a: b, c: d}")).a);
+		    assertEquals("d" , Dictionary(YAML.decode("{c: d,\na: b}")).c);
 		}
 		
 		public function testBuiltinTag() : void 
@@ -116,7 +106,7 @@ package org.as3yaml.test
 		public function testSequenceOfScalars() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/sequenceOfScalars.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/sequenceOfScalars.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onSequenceOfScalars, 2000, loader));
 		}
 			
@@ -129,79 +119,85 @@ package org.as3yaml.test
 		public function testMappingScalarsToScalars() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/mappingScalarsToScalars.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/mappingScalarsToScalars.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onMappingScalarsToScalars, 2000, loader));
 		}
 			
 		public function onMappingScalarsToScalars(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertEquals(HashMap(yamlObj).get("rbi"), 147);
+			assertEquals(Dictionary(yamlObj).rbi, 147);
 		} 		 
 
 		public function testSequenceOfMappings() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/sequenceOfMappings.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/sequenceOfMappings.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onSequenceOfMappings, 2000, loader));
 		}
 			
 		public function onSequenceOfMappings(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertTrue(yamlObj[0] is HashMap);
-			var yamlHash : HashMap = yamlObj[0] as HashMap;
-			assertEquals(yamlHash.get("avg"), 0.278);
+			assertTrue(yamlObj[0] is Dictionary);
+			var yamlMap : Dictionary = yamlObj[0] as Dictionary;
+			assertEquals(yamlMap.avg, 0.278);
 		}
 
 		public function testMappingOfMappings() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/mappingOfMappings.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/mappingOfMappings.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onMappingOfMappings, 2000, loader));
 		}
 			
 		public function onMappingOfMappings(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertTrue(HashMap(yamlObj).get("Sammy Sosa") is HashMap);
-			var yamlHash : HashMap = HashMap(yamlObj).get("Sammy Sosa") as HashMap;
-			assertEquals(yamlHash.get("hr"), 63);
+			assertTrue(Dictionary(yamlObj)["Sammy Sosa"] is Dictionary);
+			var yamlMap : Dictionary = Dictionary(yamlObj)["Sammy Sosa"] as Dictionary;
+			assertEquals(yamlMap.hr, 63);
 		} 		 	    		
 
 		public function testMappingBetweenSequences() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/mappingBetweenSequences.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/mappingBetweenSequences.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onMappingBetweenSequences, 2000, loader));
 		}
 			
 		public function onMappingBetweenSequences(event : Event, ldr : URLLoader) : void
 		{
-			var yamlObj : Object = YAML.decode(ldr.data);		
-			var keys : Array = HashMap(yamlObj).keySet().toArray();
+			var yamlObj : Dictionary = YAML.decode(ldr.data) as Dictionary;		
+			var keys : Array = [];
 			
-			var val1 : Date = yamlObj.get(keys[0])[0];
-			var val2 : Date = yamlObj.get(keys[1])[1];
+			for (var key: Object in yamlObj)
+				keys.push(key);
+			
+			var vals0: Array = yamlObj[keys[0]] as Array;
+			var vals1: Array = yamlObj[keys[1]] as Array;
+			
+			var date00 : Object = vals0[0];
+			var date11 : Object = vals1[1];
 					
-			assertEquals(val1.date, 23);
-			assertEquals(val1.month, 6);
-			assertEquals(val2.date, 12);
+			assertEquals(date00.date, 23);
+			assertEquals(date00.month, 6);
+			assertEquals(date11.date, 12);
 		} 		 	    		
 
 
 		public function testSingleDocTwoComments() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/singleDocTwoComments.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/singleDocTwoComments.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onSingleDocTwoComments, 2000, loader));
 		}
 			
 		public function onSingleDocTwoComments(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertTrue(HashMap(yamlObj).get("rbi") is Array);
-			var yamlList : Array = HashMap(yamlObj).get("rbi") as Array;			
+			assertTrue(Dictionary(yamlObj).rbi is Array);
+			var yamlList : Array = Dictionary(yamlObj).rbi as Array;			
 			assertTrue(yamlList.length == 2);
 			assertEquals(yamlList[1], "Ken Griffey")
 		} 	
@@ -209,22 +205,22 @@ package org.as3yaml.test
 		public function testAlias() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/alias.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/alias.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onAlias, 2000, loader));
 		}
 			
 		public function onAlias(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertTrue(HashMap(yamlObj).get("rbi") is Array);
-			var yamlList : Array = HashMap(yamlObj).get("rbi") as Array;
+			assertTrue(Dictionary(yamlObj).rbi is Array);
+			var yamlList : Array = Dictionary(yamlObj).rbi as Array;
 			assertEquals(yamlList[0], "Sammy Sosa");
 		} 
 
 		public function testSequenceOfMaps() : void 
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/sequenceOfMaps.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/sequenceOfMaps.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onSequenceOfMaps, 2000, loader));
 		}
 			
@@ -232,17 +228,17 @@ package org.as3yaml.test
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
 			
-			var map1 : HashMap = yamlObj[0] as HashMap;
-			var map2 : HashMap = yamlObj[1] as HashMap;
+			var map1 : Dictionary = yamlObj[0] as Dictionary;
+			var map2 : Dictionary = yamlObj[1] as Dictionary;
 			
-			assertEquals(map1.get("also"), "inner");
-			assertEquals(map2.get("last"), "entry");
+			assertEquals(map1.also, "inner");
+			assertEquals(map2.last, "entry");
 		} 
 		
 		public function testInLineNestedMapping() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/inLineNestedMapping.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/inLineNestedMapping.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onInLineNestedMapping, 2000, loader));
 		}
 			
@@ -250,19 +246,19 @@ package org.as3yaml.test
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
 
-			var map1 : HashMap = yamlObj[0] as HashMap;
-			var map2 : HashMap = yamlObj[1] as HashMap;
-			var map3 : HashMap = yamlObj[2] as HashMap;
+			var map1 : Dictionary = yamlObj[0] as Dictionary;
+			var map2 : Dictionary = yamlObj[1] as Dictionary;
+			var map3 : Dictionary = yamlObj[2] as Dictionary;
 			
-			assertEquals(map1.get("item"), "Super Hoop");
-			assertEquals(map2.get("quantity"), 4);
-			assertEquals(map3.get("item"), "Big Shoes");
+			assertEquals(map1.item, "Super Hoop");
+			assertEquals(map2.quantity, 4);
+			assertEquals(map3.item, "Big Shoes");
 		} 		
 	
 		public function testLiterals() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/literals.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/literals.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onLiterals, 2000, loader));
 		}
 			
@@ -275,7 +271,7 @@ package org.as3yaml.test
 		public function testSequenceOfSequences() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/sequenceOfSequences.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/sequenceOfSequences.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onSequenceOfSequences, 2000, loader));
 		}
 			
@@ -288,7 +284,7 @@ package org.as3yaml.test
 		public function testPlainScalars() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/plainScalars.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/plainScalars.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onPlainScalars, 2000, loader));
 		}
 			
@@ -301,7 +297,7 @@ package org.as3yaml.test
 		public function testFoldedNewline() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/foldedNewline.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/foldedNewline.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onFoldedNewline, 2000, loader));
 		}
 			
@@ -314,20 +310,20 @@ package org.as3yaml.test
 		public function testIndentationScope() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/indentationScope.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/indentationScope.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onIndentationScope, 2000, loader));
 		}
 			
 		public function onIndentationScope(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertEquals(yamlObj.get("name"), "Mark McGwire");
+			assertEquals(yamlObj.name, "Mark McGwire");
 		} 
 		
 		public function testQuotedScalars() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/quotedScalars.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/quotedScalars.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onQuotedScalars, 2000, loader));
 		}
 			
@@ -335,79 +331,79 @@ package org.as3yaml.test
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
 
-			assertEquals(yamlObj.get("unicode"), "Sosa did fine.\u263a");
-			assertEquals(yamlObj.get("hexesc"), "\r\n");
-			assertEquals(yamlObj.get("control"), "\b1998\t1999\t2000\n");
-			assertEquals(yamlObj.get("single"), '"Howdy!" he cried.');
-			assertEquals(yamlObj.get("quoted"), " # not a 'comment'.");
-			assertEquals(yamlObj.get("tie-fighter"), '|\\-*-/|');
+			assertEquals(yamlObj.unicode, "Sosa did fine.\u263a");
+			assertEquals(yamlObj.hexesc, "\r\n");
+			assertEquals(yamlObj.control, "\b1998\t1999\t2000\n");
+			assertEquals(yamlObj.single, '"Howdy!" he cried.');
+			assertEquals(yamlObj.quoted, " # not a 'comment'.");
+			assertEquals(yamlObj["tie-fighter"], '|\\-*-/|');
 		} 
 
 		public function testMultilineFlowScalars() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/multilineFlowScalars.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/multilineFlowScalars.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onMultilineFlowScalars, 2000, loader));
 		}
 			
 		public function onMultilineFlowScalars(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertTrue(yamlObj.get("plain") is String);
-			assertTrue(yamlObj.get("quoted") is String);
+			assertTrue(yamlObj.plain is String);
+			assertTrue(yamlObj.quoted is String);
 			
 		} 
 		
 		public function testIntegerTags() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/integerTags.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/integerTags.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onIntegerTags, 2000, loader));
 		}
 			
 		public function onIntegerTags(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertEquals(yamlObj.get("sexagecimal"), 12345);
-			assertEquals(yamlObj.get("sexagecimal"), yamlObj.get("canonical"));
-			assertEquals(yamlObj.get("octal"), yamlObj.get("hexadecimal"));
-			assertEquals(yamlObj.get("decimal"), yamlObj.get("canonical"));
+			assertEquals(yamlObj.sexagecimal, 12345);
+			assertEquals(yamlObj.sexagecimal, yamlObj.canonical);
+			assertEquals(yamlObj.octal, yamlObj.hexadecimal);
+			assertEquals(yamlObj.decimal, yamlObj.canonical);
 		} 
 		
 		public function testFloatingPointTags() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/floatingPointTags.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/floatingPointTags.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onFloatingPointTags, 2000, loader));
 		}
 			
 		public function onFloatingPointTags(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertEquals(yamlObj.get("canonical"), 1230.15);
-			assertEquals(yamlObj.get("canonical"), yamlObj.get("exponential"));
-			assertEquals(yamlObj.get("exponential"), yamlObj.get("sexagecimal"));
-			assertEquals(yamlObj.get("negative infinity"), Number.NEGATIVE_INFINITY);
-			assertTrue(isNaN(yamlObj.get("not a number")));
+			assertEquals(yamlObj.canonical, 1230.15);
+			assertEquals(yamlObj.canonical, yamlObj.exponential);
+			assertEquals(yamlObj.exponential, yamlObj.sexagecimal);
+			assertEquals(yamlObj["negative infinity"], Number.NEGATIVE_INFINITY);
+			assertTrue(isNaN(yamlObj["not a number"]));
 		} 
 		
 		public function testMiscellaneousTags() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/miscellaneousTags.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/miscellaneousTags.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onMiscellaneousTags, 2000, loader));
 		}
 			
 		public function onMiscellaneousTags(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			assertEquals(yamlObj.get("string"), "12345");
+			assertEquals(yamlObj.string, "12345");
 		} 
 		
 		public function testTimestampTags() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/timestampTags.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/timestampTags.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onTimestampTags, 2000, loader));
 		}
 			
@@ -415,10 +411,10 @@ package org.as3yaml.test
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
 		
-			var iso : Date = yamlObj.get("iso8601") as Date;
-			var date : Date = yamlObj.get("date") as Date;
-			var canonical : Date = yamlObj.get("canonical") as Date;
-			var spaced : Date = yamlObj.get("spaced") as Date;
+			var iso : Date = yamlObj.iso8601 as Date;
+			var date : Date = yamlObj.date as Date;
+			var canonical : Date = yamlObj.canonical as Date;
+			var spaced : Date = yamlObj.spaced as Date;
 			assertEquals(iso.getMonth(), 11);
 			assertEquals(date.getFullYear(), 2002);
 			assertEquals(canonical.getDate(), 15);
@@ -429,14 +425,14 @@ package org.as3yaml.test
 		public function testExplicitTags() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/explicitTags.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/explicitTags.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onExplicitTags, 2000, loader));
 		}
 	
 		public function onExplicitTags(event : Event, ldr : URLLoader) : void
 		{
 			var yamlObj : Object = YAML.decode(ldr.data);
-			var pictBytes : ByteArray = yamlObj.get("picture");
+			var pictBytes : ByteArray = yamlObj.picture;
 			var img : Image =  new Image();	
 			var win : TitleWindow = new TitleWindow();
 			win.width = 200;
@@ -453,14 +449,14 @@ package org.as3yaml.test
 				img.source = new Bitmap(bitmapData);				
 				PopUpManager.addPopUp(win, DisplayObject(Application.application));
 			}					
-			assertTrue(yamlObj.get("not-date") is String);
+			assertTrue(yamlObj["not-date"] is String);
 		} 
 	
 		
 		public function testGlobalTags() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/globalTags.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/globalTags.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onGlobalTags, 2000, loader));
 		}
 			
@@ -488,7 +484,7 @@ package org.as3yaml.test
 		public function testOrderedMap() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/orderedMap.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/orderedMap.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onOrderedMap, 2000, loader));
 		}
 		
@@ -499,14 +495,14 @@ package org.as3yaml.test
 			//there are four entries in the file, but one is a duplicate so it should get removed.
 			assertEquals(yamlList.length, 3);
 			
-			assertEquals(yamlList[1].get("Sammy Sosa"), 63);
-			assertEquals(yamlList[2].get("Ken Griffy"), 58);
+			assertEquals(yamlList[1]["Sammy Sosa"], 63);
+			assertEquals(yamlList[2]["Ken Griffy"], 58);
 		}
 		
 		public function testMerge() : void
 		{
 			var loader : URLLoader =  new URLLoader();
-			loader.load(new URLRequest('files/mergeKey.yaml'));
+			loader.load(new URLRequest('org/as3yaml/test/files/mergeKey.yaml'));
 			loader.addEventListener(Event.COMPLETE, addAsync(onTestMerge, 2000, loader));
 		}
 		
@@ -515,16 +511,16 @@ package org.as3yaml.test
 			var yamlObj : Object = YAML.decode(ldr.data);
 			
 
-			var map1 : HashMap = yamlObj[4];
-			var map2 : HashMap = yamlObj[5];			
-			var map3 : HashMap = yamlObj[6];
-			var map4 : HashMap = yamlObj[7];
-			assertEquals(map1.get("x"),map2.get("x"));
-			assertEquals(map2.get("x"), map3.get("x"));
-			assertEquals(map3.get("x"), map4.get("x"));
-			assertEquals(map4.get("y"), map1.get("y"));
-			assertEquals(map2.get("r"), 10);
-			assertEquals(map2.get("r"), map3.get("r"));
+			var map1 : Dictionary = yamlObj[4];
+			var map2 : Dictionary = yamlObj[5];			
+			var map3 : Dictionary = yamlObj[6];
+			var map4 : Dictionary = yamlObj[7];
+			assertEquals(map1.x,map2.x);
+			assertEquals(map2.x, map3.x);
+			assertEquals(map3.x, map4.x);
+			assertEquals(map4.y, map1.y);
+			assertEquals(map2.r, 10);
+			assertEquals(map2.r, map3.r);
 		}
 		
 		   	
