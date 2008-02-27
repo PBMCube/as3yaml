@@ -23,35 +23,34 @@
  
 package org.as3yaml {
 
-import org.rxr.actionscript.io.StringReader;
+import flash.utils.Dictionary;
 
 import org.as3yaml.nodes.*;
 import org.idmedia.as3commons.util.*;
+import org.rxr.actionscript.io.StringReader;
 
 public class Resolver {
-    private static var yamlImplicitResolvers : Map = new HashMap();
-    private static var yamlPathResolvers : Map = new HashMap();
+    private static var yamlImplicitResolvers : Dictionary = new Dictionary();
+    private static var yamlPathResolvers : Dictionary = new Dictionary();
 
-    private var resolverExactPaths : List = new ArrayList();
-    private var resolverPrefixPaths : List = new ArrayList();
+    private var resolverExactPaths : Array = new Array();
+    private var resolverPrefixPaths : Array = new Array();
 
     public static function addImplicitResolver(tag : String, regexp : RegExp, first : String) : void {
         var firstVal : String = (null == first)?"":first;
-        var reader : StringReader = new StringReader(firstVal);
-        var chrs : Array = reader.readArray(0, firstVal.length);
-        for(var i:int=0,j:int=chrs.length;i<j;i++) {
-            var theC : String = new String(chrs[i]);
-            var curr : List = List(yamlImplicitResolvers.get(theC));
+        for(var i:int=0,j:int=firstVal.length;i<j;i++) {
+            var theC : String = firstVal.charAt(i);
+            var curr : Array = yamlImplicitResolvers[theC] as Array;
             if(curr == null) {
-                curr = new ArrayList();
-                yamlImplicitResolvers.put(theC,curr);
+                curr = new Array();
+                yamlImplicitResolvers[theC] = curr;
             }
-            curr.add([tag,regexp]);
+            curr.push([tag,regexp]);
         }
     }
 
     public static function addPathResolver(tag : String, path : List, kind : Class) : void {
-        var newPath : List = new ArrayList();
+        var newPath : Array = new Array();
         var nodeCheck : Object = null;
         var indexCheck : Object = null;
         for(var iter : Iterator = path.iterator();iter.hasNext();) {
@@ -84,7 +83,7 @@ public class Resolver {
             if(!(indexCheck is String || indexCheck is int) && null != indexCheck) {
                 throw new ResolverException("Invalid index checker: " + indexCheck);
             }
-            newPath.add([nodeCheck,indexCheck]);
+            newPath.push([nodeCheck,indexCheck]);
         }
         var newKind : Class = null;
         if(String == kind) {
@@ -98,56 +97,56 @@ public class Resolver {
         } else {
             newKind = kind;
         }
-        var x : List = new ArrayList();
-        x.add(newPath);
-        var y : List = new ArrayList();
-        y.add(x);
-        y.add(kind);
-        yamlPathResolvers.put(y,tag);
+        var x : Array = new Array();
+        x.push(newPath);
+        var y : Array = new Array();
+        y.push(x);
+        y.push(kind);
+        yamlPathResolvers[y] = tag;
     }
 
     public function descendResolver(currentNode : Node, currentIndex : Object) : void {
-        var exactPaths : Map = new HashMap();
-        var prefixPaths : List = new ArrayList();
+        var exactPaths : Dictionary = new Dictionary();
+        var prefixPaths : Array = new Array();
         if(null != currentNode) {
-            var depth : int = resolverPrefixPaths.size();
-            for(var iter : Iterator = (resolverPrefixPaths.get(0)).iterator();iter.hasNext();) {
-                var obj : Array = iter.next() as Array;
-                var path : List = obj[0] as List;
+            var depth : int = resolverPrefixPaths.length;
+            for(var xi:int=0; xi < resolverPrefixPaths[0].length; xi++) {
+                var obj : Array = resolverPrefixPaths[0][xi] as Array;
+                var path : Array = obj[0] as Array;
                 if(checkResolverPrefix(depth,path, obj[1],currentNode,currentIndex)) {
                     if(path.size() > depth) {
-                        prefixPaths.add([path,obj[1]]);
+                        prefixPaths.push([path,obj[1]]);
                     } else {
-                        var resPath : List = new ArrayList();
-                        resPath.add(path);
-                        resPath.add(obj[1]);
-                        exactPaths.put(obj[1],yamlPathResolvers.get(resPath));
+                        var resPath : Array = new Array();
+                        resPath.push(path);
+                        resPath.push(obj[1]);
+                        exactPaths[obj[1]] = yamlPathResolvers[resPath];
                     }
                 }
             }
         } else {
-            for(var iter : Iterator = yamlPathResolvers.keySet().iterator();iter.hasNext();) {
-                var key : List = iter.next() as List;
-                var path : List = key.get(0) as List;
-                var kind : Class = key.get(1) as Class;
+            for(var keyObj : Object in yamlPathResolvers) {
+                var key : Array = keyObj as Array;
+                var path : Array = key[0] as Array;
+                var kind : Class = key[1] as Class;
                 if(null == path) {
-                    exactPaths.put(kind,yamlPathResolvers.get(key));
+                    exactPaths[kind] = yamlPathResolvers[key];
                 } else {
-                    prefixPaths.add(key);
+                    prefixPaths.push(key);
                 }
             }
         }
-        resolverExactPaths.addAt(0,exactPaths);
-        resolverPrefixPaths.addAt(0,prefixPaths);
+        resolverExactPaths.unshift(exactPaths);
+        resolverPrefixPaths.unshift(prefixPaths);
     }
 
     public function ascendResolver() : void {
-        resolverExactPaths.remove(0);
-        resolverPrefixPaths.remove(0);
+        resolverExactPaths.shift();
+        resolverPrefixPaths.shift();
     }
 
-    public function checkResolverPrefix(depth : int, path : List, kind : Class, currentNode : Node, currentIndex : Object) : Boolean {
-        var check : Array = path.get(depth-1);
+    public function checkResolverPrefix(depth : int, path : Array, kind : Class, currentNode : Node, currentIndex : Object) : Boolean {
+        var check : Array = path[depth-1];
         var nodeCheck : Object = check[0];
         var indexCheck : Object = check[1];
         if(nodeCheck is String) {
@@ -178,32 +177,32 @@ public class Resolver {
     }
     
     public function resolve(kind : Class, value : String, implicit : Array) : String {
-        var resolvers : List = null;
+        var resolvers : Array = null;
         if(kind == ScalarNode && implicit[0]) {
             if("" == (value)) {
-                resolvers = yamlImplicitResolvers.get("") as List;
+                resolvers = yamlImplicitResolvers[""] as Array;
             } else {
-                resolvers = yamlImplicitResolvers.get(new String(value.charAt(0))) as List;
+                resolvers = yamlImplicitResolvers[value.charAt(0)] as Array;
             }
             if(resolvers == null) {
-                resolvers = new ArrayList();
+                resolvers = new Array();
             }
-            if(yamlImplicitResolvers.containsKey(null)) {
-                resolvers.addAll(yamlImplicitResolvers.get(null));
+            if(yamlImplicitResolvers[null]) {
+                resolvers.concat(yamlImplicitResolvers[null]);
             }
-            for(var iter : Iterator = resolvers.iterator();iter.hasNext();) {
-                var val : Array = iter.next();
+            for(var xi:int=0; xi < resolvers.length; xi++) {
+                var val : Array = resolvers[xi];
                 if((RegExp(val[1])).exec(value)) {
                     return val[0] as String;
                 }
             }
         }
-        var exactPaths : Map = resolverExactPaths.get(0) as Map;
-        if(exactPaths.containsKey(kind)) {
-            return exactPaths.get(kind) as String;
+        var exactPaths : Dictionary = resolverExactPaths[0] as Dictionary;
+        if(exactPaths[kind]) {
+            return exactPaths[kind] as String;
         }
-        if(exactPaths.containsKey(null)) {
-            return exactPaths.get(null) as String;
+        if(exactPaths[null]) {
+            return exactPaths[null] as String;
         }
         if(kind == ScalarNode) {
             return YAML.DEFAULT_SCALAR_TAG;

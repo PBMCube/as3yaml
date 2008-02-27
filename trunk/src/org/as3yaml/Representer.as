@@ -21,10 +21,12 @@
  */
 
 package org.as3yaml {
+	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
+	
 	import org.as3yaml.events.*;
 	import org.as3yaml.nodes.*;
 	import org.idmedia.as3commons.util.*;
-	import flash.utils.ByteArray;
 
 public class Representer {
     private var serializer : Serializer;
@@ -75,23 +77,23 @@ public class Representer {
     }
 
     public function representSequence(tag : String, sequence : List, flowStyle : Boolean): Node {
-        var value : List = new ArrayList();
+        var value : Array = new Array();
         for(var iter : Iterator = sequence.iterator();iter.hasNext();) {
-            value.add(representData(iter.next()));
+            value.push(representData(iter.next()));
         }
         return new SequenceNode(tag,value,flowStyle);
     }
 
-    public function map(tag : String, mapping : Map, flowStyle : Boolean) : Node {
+    public function map(tag : String, mapping : Object, flowStyle : Boolean) : Node {
         return representMapping(tag,mapping,flowStyle);
     }
 
-    public function representMapping(tag : String, mapping : Map, flowStyle : Boolean): Node {
-        var value : Map = new HashMap();
+    public function representMapping(tag : String, mapping : Object, flowStyle : Boolean): Node {
+        var value : HashMap = new HashMap();
         for(var iter : Iterator = mapping.keySet().iterator();iter.hasNext();) {
             var itemKey : Object = iter.next();
             var itemValue : Object = mapping.get(itemKey);
-            value.put(representData(itemKey),representData(itemValue));
+            value.put(representData(itemKey), representData(itemValue));
         }
         return new MappingNode(tag,value,flowStyle);
     }
@@ -111,10 +113,8 @@ public class Representer {
             return data as YAMLNodeCreator;
         } else if(data is Map) {
             return new MappingYAMLNodeCreator(data);
-        } else if(data is List) {
-            return new SequenceYAMLNodeCreator(data);
-        } else if(data is Set) {
-            return new SetYAMLNodeCreator(data);
+        } else if(data is Array) {
+            return new ArrayYAMLNodeCreator(data as Array);
         } else if(data is Date) {
             return new DateYAMLNodeCreator(data as Date);
         } else if(data is String) {
@@ -125,8 +125,6 @@ public class Representer {
             return new ScalarYAMLNodeCreator("tag:yaml.org,2002:bool",data);
         } else if(data == null) {
             return new ScalarYAMLNodeCreator("tag:yaml.org,2002:null","");
-        } else if(data is Array) {
-            return new ArrayYAMLNodeCreator(data);
         } else if(data is ByteArray) {
             return new BinaryYAMLNodeCreator(data);
         } else { // if none of the above, serialize as an actionscript object
@@ -154,6 +152,7 @@ import org.idmedia.as3commons.util.StringUtils;
 import mx.utils.ObjectUtil;
 import flash.utils.ByteArray;
 import mx.utils.Base64Encoder;
+import flash.utils.Dictionary;
 
 internal class DateYAMLNodeCreator implements YAMLNodeCreator {
     private var data : Date;
@@ -187,28 +186,10 @@ internal class DateYAMLNodeCreator implements YAMLNodeCreator {
     }
 }
 
-internal class SetYAMLNodeCreator implements YAMLNodeCreator {
-    private var data : Set;
-    public function SetYAMLNodeCreator(data : Object) {
-        this.data = data as Set;
-    }
-
-    public function taguri() : String {
-        return "tag:yaml.org,2002:set";
-    }
-
-    public function toYamlNode(representer : Representer) : Node {
-        var entries : Map = new HashMap();
-        for(var iter : Iterator = data.iterator();iter.hasNext();) {
-            entries.put(iter.next(),null);
-        }
-        return representer.map(taguri(), entries, false);
-    }
-}
 
 internal class ArrayYAMLNodeCreator implements YAMLNodeCreator {
-    private var data : Object;
-    public function ArrayYAMLNodeCreator(data : Object) {
+    private var data : Array;
+    public function ArrayYAMLNodeCreator(data : Array) {
         this.data = data;
     }
 
@@ -309,7 +290,7 @@ internal class SequenceYAMLNodeCreator implements YAMLNodeCreator {
 }
 
 internal class MappingYAMLNodeCreator implements YAMLNodeCreator {
-    private var data : Map;
+    private var data : Object;
     public function MappingYAMLNodeCreator(data : Object) {
         this.data = data as Map;
     }

@@ -26,7 +26,7 @@ package org.as3yaml {
 	
 
 public interface YAMLFactory {
-    function createScanner(io:StringReader):Scanner;
+    function createScanner(io:String):Scanner;
     function createParser(scanner:Scanner, cfg:YAMLConfig):Parser;
     function createResolver():Resolver;
     function createComposer(parser:Parser, resolver:Resolver):Composer;

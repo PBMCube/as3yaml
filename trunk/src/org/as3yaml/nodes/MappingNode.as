@@ -21,11 +21,11 @@
 
 package org.as3yaml.nodes {
 	
-	import org.idmedia.as3commons.util.Map;
+	import flash.utils.Dictionary;
 
 
 public class MappingNode extends CollectionNode {
-    public function MappingNode(tag : String, value : Map, flowStyle : Boolean) {
+    public function MappingNode(tag : String, value : Object, flowStyle : Boolean) {
         super(tag,value,flowStyle);
     }
 }// MappingNode

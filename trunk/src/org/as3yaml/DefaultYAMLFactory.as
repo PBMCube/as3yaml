@@ -25,7 +25,7 @@ package org.as3yaml {
 import org.rxr.actionscript.io.*;
 
 public class DefaultYAMLFactory implements YAMLFactory {
-    public function createScanner(io : StringReader) : Scanner {
+    public function createScanner(io : String) : Scanner {
         return new Scanner(io);
     }
     public function createParser(scanner : Scanner, cfg : YAMLConfig) : Parser {

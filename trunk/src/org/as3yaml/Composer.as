@@ -21,6 +21,8 @@
 
 package org.as3yaml {
 
+import flash.utils.Dictionary;
+
 import org.as3yaml.events.*;
 import org.as3yaml.nodes.*;
 import org.idmedia.as3commons.util.*;
@@ -28,12 +30,12 @@ import org.idmedia.as3commons.util.*;
 public class Composer {
     private var parser : Parser;
     private var resolver : Resolver;
-    private var anchors : Map;
+    private var anchors : Dictionary;
 
     public function Composer(parser : Parser, resolver : Resolver) : void {
         this.parser = parser;
         this.resolver = resolver;
-        this.anchors = new HashMap();
+        this.anchors = new Dictionary();
     }
 
     public function checkNode() : Boolean {
@@ -44,11 +46,11 @@ public class Composer {
         return checkNode() ? composeDocument() : Node(null);
     }
 
-    public function eachNode(composer : Composer) : Iterator {
+    public function eachNode(composer : Composer) : NodeIterator {
         return new NodeIterator(composer);
     }
 
-    public function iterator() : Iterator {
+    public function iterator() : NodeIterator {
         return eachNode(this);
     }
 
@@ -62,7 +64,7 @@ public class Composer {
         var node : Node = composeNode(null,null);
         //Drop DOCUMENT-END event
         parser.getEvent();
-        this.anchors.clear();
+        this.anchors = new Dictionary();
         return node;
     }
 
@@ -70,22 +72,22 @@ public class Composer {
     private static var TRU : Array = [true];
 
     public function composeNode(parent : Node, index : Object) : Node {
-        if(parser.peekEvent() is AliasEvent) {
+		var event : Event = parser.peekEvent();
+        if(event is AliasEvent) {
             var eve : AliasEvent = parser.getEvent() as AliasEvent;
             var anchor : String = eve.getAnchor();
-            if(!anchors.containsKey(anchor)) {
+            if(!anchors[anchor]) {
                 
                 throw new ComposerException(null,"found undefined alias " + anchor,null);
             }
-            return anchors.get(anchor) as Node;
+            return anchors[anchor] as Node;
         }
-        var event : Event = parser.peekEvent();
         var anchor : String = null;
         if(event is NodeEvent) {
             anchor = NodeEvent(event).getAnchor();
         }
         if(null != anchor) {
-            if(anchors.containsKey(anchor)) {
+            if(anchors[anchor]) {
                 throw new ComposerException("found duplicate anchor "+anchor+"; first occurence",null,null);
             }
         }
@@ -99,7 +101,7 @@ public class Composer {
             }
             node = new ScalarNode(tag,ev.getValue(),ev.getStyle());
             if(null != anchor) {
-                anchors.put(anchor,node);
+                anchors[anchor] = node;
             }
         } else if(event is SequenceStartEvent) {
             var start : SequenceStartEvent = parser.getEvent() as SequenceStartEvent;
@@ -107,13 +109,14 @@ public class Composer {
             if(tag == null || tag == ("!")) {
                 tag = resolver.resolve(SequenceNode,null,start.getImplicit()  ? TRU : FALS);
             }
-            node = new SequenceNode(tag,new ArrayList(),start.getFlowStyle());
+            node = new SequenceNode(tag,[],start.getFlowStyle());
             if(null != anchor) {
-                anchors.put(anchor,node);
+                anchors[anchor] = node;
             }
             var ix : int = 0;
+            var nodeVal: Array = node.getValue() as Array;
             while(!(parser.peekEvent() is SequenceEndEvent)) {
-                (node.getValue()).add(composeNode(node,new int(ix++)));
+                nodeVal.push(composeNode(node, ix++));
             }
             parser.getEvent();
         } else if(event is MappingStartEvent) {
@@ -122,17 +125,18 @@ public class Composer {
             if(tag == null || tag == ("!")) {
                 tag = resolver.resolve(MappingNode,null, st.getImplicit() ? TRU : FALS);
             }
-            node = new MappingNode(tag, new HashMap(), st.getFlowStyle());
+            node = new MappingNode(tag, new Dictionary(), st.getFlowStyle());
             if(null != anchor) {
-                anchors.put(anchor,node);
+                anchors[anchor] = node;
             }
+            var mapNodeVal: Dictionary = node.getValue() as Dictionary;
             while(!(parser.peekEvent() is MappingEndEvent)) {
                 var key : Event = parser.peekEvent();
                 var itemKey : Node = composeNode(node,null);
-                if((node.getValue()).containsKey(itemKey)) {
+                if(mapNodeVal[itemKey]) {
                     composeNode(node,itemKey);
                 } else {
-                    (node.getValue()).put(itemKey,composeNode(node,itemKey));
+                    mapNodeVal[itemKey] = composeNode(node,itemKey);
                 }
             }
             parser.getEvent();
@@ -146,12 +150,13 @@ public class Composer {
 
 import org.idmedia.as3commons.util.Iterator;
 import org.as3yaml.Composer;
+import org.as3yaml.nodes.Node;
 	
 
-internal class NodeIterator implements Iterator {
+internal class NodeIterator {
 	private var composer : Composer;
 	public function NodeIterator(composer : Composer) : void { this.composer = composer; }
     public function hasNext() : Boolean {return composer.checkNode();}
-    public function next() : * {return composer.getNode();}
+    public function next() :  Node{return composer.getNode();}
     public function remove() : void {}
 }
