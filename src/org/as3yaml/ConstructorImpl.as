@@ -22,32 +22,36 @@
 
 package org.as3yaml {
 
+    import flash.utils.Dictionary;
+    
     import org.idmedia.as3commons.util.HashMap;
-    import org.idmedia.as3commons.util.HashSet;
-    import org.idmedia.as3commons.util.Map;
-    import org.idmedia.as3commons.util.Set;;
+    import org.idmedia.as3commons.util.Map;;
 	
 	public class ConstructorImpl extends SafeConstructor 
 	{
-	    private static var yamlConstructors : HashMap = new HashMap();
-	    private static var yamlMultiConstructors : HashMap = new HashMap();
+	    private static var yamlConstructors : Dictionary = new Dictionary();
+	    private static var yamlMultiConstructors : Dictionary = new Dictionary();
 	    private static var yamlMultiRegexps : HashMap = new HashMap();
 	    
-	    override public function getYamlConstructor(key : Object) : YamlConstructor
-	    {
-	        var mine : YamlConstructor = YamlConstructor(yamlConstructors.get(key));
-	        if(mine == null) {
-	            mine = super.getYamlConstructor(key);
-	        }
-	        return mine;
+	    override public function getYamlConstructor(key:Object) : Function {
+	  	
+	        var ctor : Function = yamlConstructors[key];
+	        
+	        if(ctor == null) {
+	          ctor = super.getYamlConstructor(key);
+	        }   
+	        return ctor;
 	    }
 	
-	   override public function getYamlMultiConstructor(key : Object) : YamlMultiConstructor {
-	        var mine : YamlMultiConstructor = yamlMultiConstructors.get(key) as YamlMultiConstructor;
-	        if(mine == null) {
-	            mine = super.getYamlMultiConstructor(key);
-	        }
-	        return mine;
+	    override public function getYamlMultiConstructor(key : Object) : Function {
+	        
+	        var ctor : Function = yamlMultiConstructors[key];
+	        
+	        if(ctor == null) {
+	         ctor = super.getYamlMultiConstructor(key);
+	        } 
+	           
+	        return ctor;
 	    }
 	
 	    override public function getYamlMultiRegexp(key : Object) : RegExp {

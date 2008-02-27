@@ -22,7 +22,7 @@
 package org.as3yaml {
 
 internal class SimpleKey {
-    private var tokenNumber : int;
+    public var tokenNumber : int;
     private var required : Boolean;
     private var index : int;
     private var line : int;
@@ -36,9 +36,9 @@ internal class SimpleKey {
         this.column = column;
     }
 
-    public function getTokenNumber() : int {
-        return this.tokenNumber;
-    }
+//    public function getTokenNumber() : int {
+//        return this.tokenNumber;
+//    }
 
     public function getColumn() : int {
         return this.column;

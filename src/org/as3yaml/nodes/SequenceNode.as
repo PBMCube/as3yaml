@@ -20,10 +20,9 @@
  */
 
 package org.as3yaml.nodes {
-	import org.idmedia.as3commons.util.List;
 
 public class SequenceNode extends CollectionNode {
-    public function SequenceNode(tag : String, value : List, flowStyle : Boolean) {
+    public function SequenceNode(tag : String, value : Array, flowStyle : Boolean) {
         super(tag,value,flowStyle);
     }
 }

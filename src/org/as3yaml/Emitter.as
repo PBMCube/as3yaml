@@ -23,9 +23,9 @@
 package org.as3yaml {
 
 import org.as3yaml.events.*;
-import org.idmedia.as3commons.util.HashMap;
 import org.idmedia.as3commons.util.Iterator;
 import org.idmedia.as3commons.util.Map;
+import org.idmedia.as3commons.util.HashMap;
 import org.rxr.actionscript.io.StringWriter;
 
 
@@ -229,9 +229,10 @@ public class Emitter {
         var start : int = 0;
         var ending : int = 0;
         var data : String = null;
-        while(ending <= text.length) {
+        var textLen: uint = text.length;
+        while(ending <= textLen) {
             var ch : * = 0;
-            if(ending < text.length) {
+            if(ending < textLen) {
                 ch = text.charAt(ending);
             }
             if(ch==0 || "\"\\\u0085".indexOf(ch) != -1 || !('\u0020' <= ch && ch <= '\u007E')) {
@@ -256,7 +257,7 @@ public class Emitter {
                     start = ending+1;
                 }
             }
-            if((0 < ending && ending < (text.length-1)) && (ch == ' ' || start >= ending) && (env.column+(ending-start)) > env.bestWidth && split) {
+            if((0 < ending && ending < (textLen-1)) && (ch == ' ' || start >= ending) && (env.column+(ending-start)) > env.bestWidth && split) {
                 data = text.substring(start,ending) + "\\";
                 if(start < ending) {
                     start = ending;

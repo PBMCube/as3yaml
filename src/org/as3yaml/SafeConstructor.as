@@ -21,53 +21,45 @@
 
 package org.as3yaml {
 
-import flash.utils.ByteArray;
+import flash.utils.Dictionary;
 import flash.utils.getDefinitionByName;
 import flash.utils.getQualifiedClassName;
 
+import mx.utils.Base64Decoder;
 import mx.utils.ObjectUtil;
 
 import org.as3yaml.nodes.Node;
 import org.idmedia.as3commons.util.ArrayList;
 import org.idmedia.as3commons.util.Collection;
-import org.idmedia.as3commons.util.HashMap;
 import org.idmedia.as3commons.util.Iterator;
 import org.idmedia.as3commons.util.Map;
+import org.idmedia.as3commons.util.HashMap;
 import org.idmedia.as3commons.util.StringUtils;
 
-import mx.utils.Base64Decoder;
-
 public class SafeConstructor extends BaseConstructor {
-    private static var yamlConstructors : Map = new HashMap();
-    private static var yamlMultiConstructors : Map = new HashMap();
+    private static var yamlConstructors : Dictionary = new Dictionary();
+    private static var yamlMultiConstructors : Dictionary = new Dictionary();
     private static var yamlMultiRegexps : Map = new HashMap();
    
-    override public function getYamlConstructor(key:Object) : YamlConstructor {
+    override public function getYamlConstructor(key:Object) : Function {
   	
-        var mine : YamlConstructorImpl;
-        var ctor : Function = yamlConstructors.get(key);
+        var ctor : Function = yamlConstructors[key];
         
-        if(ctor != null) {
-          mine = new YamlConstructorImpl();
-          mine.callFunc = ctor;
-        } else {
-          mine = super.getYamlConstructor(key) as YamlConstructorImpl;
+        if(ctor == null) {
+          ctor = super.getYamlConstructor(key);
         }   
-        return mine;
+        return ctor;
     }
 
-    override public function getYamlMultiConstructor(key : Object) : YamlMultiConstructor {
+    override public function getYamlMultiConstructor(key : Object) : Function {
         
-        var mine : YamlMultiConstructorImpl;
-        var ctor : Function = yamlMultiConstructors.get(key);
+        var ctor : Function = yamlMultiConstructors[key];
         
-        if(ctor != null) {
-          mine = new YamlMultiConstructorImpl();
-          mine.callFunc = ctor;
-        } else {
-          mine = super.getYamlMultiConstructor(key) as YamlMultiConstructorImpl;
-        }   
-        return mine;
+        if(ctor == null) {
+         ctor = super.getYamlMultiConstructor(key);
+        } 
+           
+        return ctor;
     }
 
     override public function getYamlMultiRegexp(key : Object) : RegExp {
@@ -86,11 +78,11 @@ public class SafeConstructor extends BaseConstructor {
     }
 
     public static function addConstructor(tag : String, ctor : Function) : void {
-        yamlConstructors.put(tag,ctor);
+        yamlConstructors[tag] = ctor;
     }
 
     public static function addMultiConstructor(tagPrefix : String, ctor : Function) : void {
-        yamlMultiConstructors.put(tagPrefix,ctor);
+        yamlMultiConstructors[tagPrefix] = ctor;
         yamlMultiRegexps.put(tagPrefix, new RegExp("^"+tagPrefix));
     }
 
@@ -98,17 +90,14 @@ public class SafeConstructor extends BaseConstructor {
         super(composer);
     }
 
-    private static var BOOL_VALUES : Map = new HashMap();
-    /*static*/ {
-        //        BOOL_VALUES.put("y",Boolean.TRUE);
-        //        BOOL_VALUES.put("n",Boolean.FALSE);
-        BOOL_VALUES.put("yes",true);
-        BOOL_VALUES.put("no",false);
-        BOOL_VALUES.put("true",true);
-        BOOL_VALUES.put("false",false);
-        BOOL_VALUES.put("on",true);
-        BOOL_VALUES.put("off",false);
-    }
+    private static var BOOL_VALUES : Object = {
+										        yes     : true,
+										        no      : false,
+										        "true"  : true,
+										        "false" : false,
+										        on      : true,
+										        off     : false
+    										  };
 
     public static function constructYamlNull(ctor : Constructor, node : Node) : Object {
         return null;
@@ -116,7 +105,7 @@ public class SafeConstructor extends BaseConstructor {
     
     public static function constructYamlBool(ctor : Constructor, node : Node) : Object {
         var val : String = ctor.constructScalar(node) as String;
-        return BOOL_VALUES.get(val.toLowerCase());
+        return BOOL_VALUES[val.toLowerCase()];
     }
 
     public static function constructYamlOmap(ctor : Constructor, node : Node) : Object {
@@ -360,12 +349,10 @@ public class SafeConstructor extends BaseConstructor {
         try {
             var cl : Class = getDefinitionByName(pref) as Class;
             outp = new cl();
-            var values : Map = Map(ctor.constructMapping(node));
+            var values : Dictionary = Dictionary(ctor.constructMapping(node));
             var props : Array = ObjectUtil.getClassInfo(outp).properties;
-            for(var iter : Iterator  = values.keySet().iterator();iter.hasNext();) {
-                var key : Object = iter.next();
-                var value : Object = values.get(key);
-                
+            for(var key : Object in values) {
+                var value : Object = values[key];
 				outp[key] = value;
             } 
         } catch(e : Error) {

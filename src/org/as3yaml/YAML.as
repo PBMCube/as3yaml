@@ -25,7 +25,6 @@ package org.as3yaml {
 
 
 import org.idmedia.as3commons.util.ArrayList;
-import org.idmedia.as3commons.util.HashMap;
 import org.idmedia.as3commons.util.Iterator;
 import org.idmedia.as3commons.util.List;
 import org.rxr.actionscript.io.*;
@@ -46,22 +45,22 @@ public class YAML {
     /**
      * @private
      */    
-    public static var ESCAPE_REPLACEMENTS : HashMap = new HashMap();
+    public static var ESCAPE_REPLACEMENTS : Object = new Object();
     
     static: {
-    ESCAPE_REPLACEMENTS.put('\x00',"0");
-    ESCAPE_REPLACEMENTS.put('\u0007',"a");
-    ESCAPE_REPLACEMENTS.put('\u0008',"b");
-    ESCAPE_REPLACEMENTS.put('\u0009',"t");
-    ESCAPE_REPLACEMENTS.put('\n',"n");
-    ESCAPE_REPLACEMENTS.put('\u000B',"v");
-    ESCAPE_REPLACEMENTS.put('\u000C',"f");
-    ESCAPE_REPLACEMENTS.put('\r',"r");
-    ESCAPE_REPLACEMENTS.put('\u001B',"e");
-    ESCAPE_REPLACEMENTS.put('"',"\"");
-    ESCAPE_REPLACEMENTS.put('\\',"\\");
-    ESCAPE_REPLACEMENTS.put('\u0085',"N");
-    ESCAPE_REPLACEMENTS.put('\u00A0',"_");
+    ESCAPE_REPLACEMENTS['\x00'] = "0";
+    ESCAPE_REPLACEMENTS['\u0007'] = "a";
+    ESCAPE_REPLACEMENTS['\u0008'] = "b";
+    ESCAPE_REPLACEMENTS['\u0009'] = "t";
+    ESCAPE_REPLACEMENTS['\n'] = "n";
+    ESCAPE_REPLACEMENTS['\u000B'] = "v";
+    ESCAPE_REPLACEMENTS['\u000C'] = "f";
+    ESCAPE_REPLACEMENTS['\r'] = "r";
+    ESCAPE_REPLACEMENTS['\u001B'] = "e";
+    ESCAPE_REPLACEMENTS['"'] = "\"";
+    ESCAPE_REPLACEMENTS['\\'] = "\\";
+    ESCAPE_REPLACEMENTS['\u0085'] = "N";
+    ESCAPE_REPLACEMENTS['\u00A0'] = "_";
     }
 	
 	/**
@@ -194,14 +193,14 @@ public class YAML {
 	 *		
 	 *	public function onYamlLoad(event : Event) : void
 	 *	{
-	 *		var yamlMap : HashMap = YAML.decode(event.target.data) as HashMap; // returns a HashMap		
+	 *		var yamlMap : Dictionary = YAML.decode(event.target.data) as Dictionary; // returns a Dictionary		
 	 *		
-	 *      trace(yamlMap.get("Date"));  // returns a Date object and prints: Fri Nov 23 15:03:17 GMT-0500 2001
-	 *      trace(yamlMap.get("User"));  // returns a String and prints: ed
-	 *      trace(yamlMap.get("Fatal")); // returns a String and prints: Unknown variable "bar"
-	 *      trace(yamlMap.get("Stack")); // returns an Array and prints: [object HashMap],[object HashMap]
-	 *      trace(yamlMap.get("Stack")[0].get("line"));  // returns an Int and prints: 23
-	 *      trace(yamlMap.get("Stack")[0].get("code"));  // returns a String and prints: x = MoreObject("345\n")      
+	 *      trace(yamlMap.Date);  // returns a Date object and prints: Fri Nov 23 15:03:17 GMT-0500 2001
+	 *      trace(yamlMap.User);  // returns a String and prints: ed
+	 *      trace(yamlMap.Fatal); // returns a String and prints: Unknown variable "bar"
+	 *      trace(yamlMap.Stack); // returns an Array and prints: [object Dictionary],[object Dictionary]
+	 *      trace(yamlMap.Stack[0].line);  // returns an Int and prints: 23
+	 *      trace(yamlMap.Stack[0].code);  // returns a String and prints: x = MoreObject("345\n")      
 	 *	}
 	 *  </listing>
 	 *  
@@ -234,12 +233,12 @@ public class YAML {
 	 * 
      * @param yaml a YAML string.
      * @return an actionscript object. The object type will depend on the YAML. 
-     *            The cost common return types are HashMap or Array.
+     *            The most common return types are Dictionary or Array.
      * 
      */    
     public static function decode (yaml : String) : Object
     {
-		var obj : Object = YAML.load(new StringReader(yaml), 
+		var obj : Object = YAML.load(yaml, 
 									 new DefaultYAMLFactory(),
 									 new DefaultYAMLConfig());
 		return obj;
@@ -263,7 +262,7 @@ public class YAML {
         }
     }
 
-    public static function load(io : StringReader, fact : YAMLFactory, cfg : YAMLConfig) : Object 
+    public static function load(io : String, fact : YAMLFactory, cfg : YAMLConfig) : Object 
     {
         var ctor : Constructor = fact.createConstructor(fact.createComposer(fact.createParser(fact.createScanner(io),cfg),fact.createResolver()));
         if(ctor.checkData()) {

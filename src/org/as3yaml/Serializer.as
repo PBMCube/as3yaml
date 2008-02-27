@@ -21,16 +21,13 @@
  */
 
 package org.as3yaml {
+	import flash.utils.Dictionary;
+	
 	import mx.utils.StringUtil;
 	
 	import org.as3yaml.events.*;
 	import org.as3yaml.nodes.*;
-	import org.idmedia.as3commons.util.HashMap;
-	import org.idmedia.as3commons.util.HashSet;
-	import org.idmedia.as3commons.util.Iterator;
-	import org.idmedia.as3commons.util.Map;
-	import org.idmedia.as3commons.util.Set;
-	
+	import org.idmedia.as3commons.util.*;
 	
 
 public class Serializer {
@@ -119,8 +116,9 @@ public class Serializer {
         } else {
             this.anchors.put(node,null);
             if(node is SequenceNode) {
-                for(var iter : Iterator = (node.getValue()).iterator();iter.hasNext();) {
-                    anchorNode(iter.next());
+            	var seqNodeVal: Array =  node.getValue() as Array;
+                for each (var item: Node in seqNodeVal) {
+                    anchorNode(item);
                 }
             } else if(node is MappingNode) {
                 var value : Map = MappingNode(node).getValue() as Map;
@@ -158,9 +156,10 @@ public class Serializer {
                 var imp : Boolean = !options.getExplicitTypes() && (node.getTag() == (this.resolver.resolve(SequenceNode,null,[true,true])));
                 this.emitter.emit(new SequenceStartEvent(tAlias,node.getTag(),imp,CollectionNode(node).getFlowStyle()));
                 var ix : int = 0;
-                for(var iter : Iterator = (node.getValue()).iterator();iter.hasNext();) {
-                    serializeNode(iter.next(),node,new int(ix++));
-                }
+            	var seqNodeVal: Array =  node.getValue() as Array;
+                for each (var item: Node in seqNodeVal) {
+                    serializeNode(item,node, ix++);
+                }                
                 this.emitter.emit(new SequenceEndEvent());
             } else if(node is MappingNode) {
                 var impl : Boolean = !options.getExplicitTypes() && (node.getTag() == (this.resolver.resolve(MappingNode,null,[true,true])));
