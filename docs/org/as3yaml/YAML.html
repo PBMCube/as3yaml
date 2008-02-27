@@ -81,7 +81,7 @@ if (!isEclipse() || window.name != ECLIPSE_FRAME_NAME) {titleBar_setSubTitle("Cl
 <tr class="">
 <td class="summaryTablePaddingCol">&nbsp;</td><td class="summaryTableInheritanceCol">&nbsp;</td><td class="summaryTableSignatureCol">
 <div class="summarySignature">
-<a class="signatureLink" href="#load()">load</a>(io:StringReader, fact:YAMLFactory, cfg:YAMLConfig):Object</div>
+<a class="signatureLink" href="#load()">load</a>(io:String, fact:YAMLFactory, cfg:YAMLConfig):Object</div>
 <div class="summaryTableDescription">[static]</div>
 </td><td class="summaryTableOwnerCol">YAML</td>
 </tr>
@@ -138,7 +138,7 @@ showHideInherited();
 <table border="0" cellspacing="0" cellpadding="0">
 <tr>
 <td width="20"></td><td><code>Object</code> &mdash; an actionscript object. The object type will depend on the YAML. 
-                The cost common return types are HashMap or Array.
+                The cost common return types are Dictionary or Array.
      
      </td>
 </tr>
@@ -180,14 +180,15 @@ showHideInherited();
    
   public function onYamlLoad(event : Event) : void
   {
-   var yamlMap : HashMap = YAML.decode(event.target.data) as HashMap; // returns a HashMap  
-   
-       trace(yamlMap.get("Date"));  // returns a Date object and prints: Fri Nov 23 15:03:17 GMT-0500 2001
-       trace(yamlMap.get("User"));  // returns a String and prints: ed
-       trace(yamlMap.get("Fatal")); // returns a String and prints: Unknown variable "bar"
-       trace(yamlMap.get("Stack")); // returns an Array and prints: [object HashMap],[object HashMap]
-       trace(yamlMap.get("Stack")[0].get("line"));  // returns an Int and prints: 23
-       trace(yamlMap.get("Stack")[0].get("code"));  // returns a String and prints: x = MoreObject("345\n")      
+	 var yamlMap : Dictionary = YAML.decode(event.target.data) as Dictionary; // returns a Dictionary		
+	 		
+	 trace(yamlMap.Date);  // returns a Date object and prints: Fri Nov 23 15:03:17 GMT-0500 2001
+	 trace(yamlMap.User);  // returns a String and prints: ed
+	 trace(yamlMap.Fatal); // returns a String and prints: Unknown variable "bar"
+	 trace(yamlMap.Stack); // returns an Array and prints: [object Dictionary],[object Dictionary]
+	 trace(yamlMap.Stack[0].line);  // returns an Int and prints: 23
+	 trace(yamlMap.Stack[0].code);  // returns a String and prints: x = MoreObject("345\n")      
+    
   }
    </pre></div>
    
