@@ -31,9 +31,8 @@ import mx.utils.ObjectUtil;
 import org.as3yaml.nodes.Node;
 import org.idmedia.as3commons.util.ArrayList;
 import org.idmedia.as3commons.util.Collection;
-import org.idmedia.as3commons.util.Iterator;
-import org.idmedia.as3commons.util.Map;
 import org.idmedia.as3commons.util.HashMap;
+import org.idmedia.as3commons.util.Map;
 import org.idmedia.as3commons.util.StringUtils;
 
 public class SafeConstructor extends BaseConstructor {
@@ -141,30 +140,32 @@ public class SafeConstructor extends BaseConstructor {
     private static var YMD_REGEXP : RegExp = new RegExp("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)$");
     public static function constructYamlTimestamp(ctor : Constructor, node : Node) : Object {
         var match : Object = YMD_REGEXP.exec(String(node.getValue()));
+
+        var year_s : String;
+        var month_s : String;
+        var day_s : String;
+        var time : Date = null;
+       
         if(match) {
-            var year_s : String = match[1];
-            var month_s : String = match[2];
-            var day_s : String = match[3];
-            var time : Date =  new Date(0,0,0);
+            year_s = match[1];
+            month_s = match[2];
+            day_s = match[3];
             
-            if(year_s != null) {
-                time.setFullYear(year_s);
+            if(year_s == null || month_s == null || day_s == null) {
+               throw new ConstructorException(null, "bad date value: " + node.getValue(), null);
             }
-            if(month_s != null) {
-                time.setMonth(Number(month_s) -1);
-            }
-            if(day_s != null) {
-                time.setDate(day_s);
-            }
-            return time;//.getTime();
+
+            return new Date(year_s,int(month_s)-1,day_s);
         }
         match = TIMESTAMP_REGEXP.exec(String(node.getValue()));
         if(!match) {
             return ctor.constructPrivateType(node);
         }
-        var year_s: String = match[1];
-        var month_s: String = match[2];
-        var day_s: String = match[3];
+        
+        year_s = match[1];
+        month_s = match[2];
+        day_s = match[3];
+        
         var hour_s: String = match[4];
         var min_s: String = match[5];
         var sec_s: String = match[6];
@@ -181,21 +182,20 @@ public class SafeConstructor extends BaseConstructor {
                 }
             }
         }
-        var time : Date = new Date();
+        
+        time = new Date();
+        
+        if(month_s != null && day_s != null) {
+            time.setMonth(int(month_s)-1, day_s);
+        }      
         if(year_s != null) {
             time.setFullYear(year_s);
-        }
-        if(month_s != null) {
-            time.setMonth(int(month_s)-1);
-        }
-        if(day_s != null) {
-            time.setDate(day_s);
         }
         if(hour_s != null) {
             time.setHours(hour_s);
         }
         if(min_s != null) {
-            time.setMinutes((min_s));
+            time.setMinutes(min_s);
         }
         if(sec_s != null) {
             time.setSeconds(sec_s);
@@ -213,9 +213,8 @@ public class SafeConstructor extends BaseConstructor {
             if(timezonem_s != null) {
                 zone += int(timezonem_s)*60000;
             }
-            //time = sign*zone;
         }
-        return time;//.getTime();
+        return time;
     }
 
     public static function constructYamlInt(ctor : Constructor, node : Node) : Object {
