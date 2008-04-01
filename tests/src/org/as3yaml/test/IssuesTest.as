@@ -4,8 +4,6 @@ package org.as3yaml.test
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	import flash.utils.Dictionary;
-	import flash.xml.XMLDocument;
-	import flash.xml.XMLNode;
 	
 	import flexunit.framework.TestCase;
 	
@@ -42,16 +40,34 @@ package org.as3yaml.test
 		{
 			var loader : URLLoader =  new URLLoader();
 			loader.load(new URLRequest('org/as3yaml/test/files/issue4.yaml'));
-			loader.addEventListener(Event.COMPLETE, onTestIssueFour);
+			loader.addEventListener(Event.COMPLETE, addAsync(onTestIssueFour, 2000, loader));
 		}
 			
-		public function onTestIssueFour(event : Event) : void
+		public function onTestIssueFour(event : Event, ldr : URLLoader) : void
 		{
 			var start: Number = flash.utils.getTimer();
-			var yaml : Dictionary  = YAML.decode(event.currentTarget.data) as Dictionary;
+			var yaml : Dictionary  = YAML.decode(ldr.data) as Dictionary;
 	        assertTrue((flash.utils.getTimer() - start) < 300);			
-			
 		}
+		
+		public function testIssueFive() : void
+		{
+			var loader : URLLoader =  new URLLoader();
+			loader.load(new URLRequest('org/as3yaml/test/files/issue5.yaml'));
+			loader.addEventListener(Event.COMPLETE, addAsync(onTestIssueFive, 2000, loader));
+		}
+			
+		public function onTestIssueFive(event : Event, ldr : URLLoader) : void
+		{
+			var yaml : Array  = YAML.decode(ldr.data) as Array;
+			var nov: Date = yaml[0].consumed_at as Date;
+			var feb: Date = yaml[1].consumed_at_tz as Date;
+			
+			assertEquals(nov.month, 10);
+			assertEquals(nov.toDateString(), "Mon Nov 12 2007");
+			assertEquals(feb.month, 1);
+			assertEquals(feb.toDateString(), "Mon Feb 4 2008")
+		}		
 			
 	}
 }

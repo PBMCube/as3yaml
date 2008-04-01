@@ -3,14 +3,12 @@
  creationComplete="init()">
 	<mx:Script>
 		<![CDATA[
-			import mx.utils.ObjectProxy;
-			import mx.utils.ObjectUtil;
 			import org.as3yaml.test.*;
 			import flexunit.framework.TestSuite;
 			
 			private function init() : void
 			{	
-			
+				
 				var suite : TestSuite =  new TestSuite();
 						
 				suite.addTestSuite(YamlLoadTest);
@@ -27,4 +25,5 @@
 	</mx:Script>
 	
 	 <flexui:TestRunnerBase id="runner" width="100%" height="100%" />
+	 
 </mx:Application>
