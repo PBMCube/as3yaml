@@ -23,43 +23,44 @@
 
 package org.as3yaml {
 	import org.as3yaml.tokens.*;
-	import org.idmedia.as3commons.util.*;
+	import org.as3yaml.util.StringUtils;
+	import org.idmedia.as3commons.util.Iterator;
 	import org.rxr.actionscript.io.StringReader;
 
 	
 
 
 public class Scanner {
-    private static const LINEBR : String = "\n\u0085\u2028\u2029";
-    private static const NULL_BL_LINEBR : String = "\x00 \r\n\u0085";
-    private static const NULL_BL_T_LINEBR : String = "\x00 \t\r\n\u0085";
-    private static const NULL_OR_OTHER : String = NULL_BL_T_LINEBR;
-    private static const NULL_OR_LINEBR : String = "\x00\r\n\u0085";
-    private static const FULL_LINEBR : String = "\r\n\u0085";
-    private static const BLANK_OR_LINEBR : String = " \r\n\u0085";
-    private static const S4 : String = "\0 \t\r\n\u0028[]{}";    
-    private static const ALPHA : String = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
-    private static const STRANGE_CHAR : String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789][-';/?:@&=+$,.!~*()%";
-    private static const RN : String = "\r\n";
-    private static const BLANK_T : String = " \t";
-    private static const SPACES_AND_STUFF : String = "'\"\\\x00 \t\r\n\u0085";
-    private static const DOUBLE_ESC : String = "\"\\";
-    private static const NON_ALPHA_OR_NUM : String = "\x00 \t\r\n\u0085?:,]}%@`";
-    private static const NON_PRINTABLE : RegExp = new RegExp("[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\uD7FF\uE000-\uFFFD]");
-    private static const NOT_HEXA : RegExp = new RegExp("[^0-9A-Fa-f]");
-    private static const NON_ALPHA : RegExp = new RegExp("[^-0-9A-Za-z_]");
-    private static const R_FLOWZERO : RegExp = new RegExp(/[\x00 \t\r\n\u0085]|(:[\x00 \t\r\n\u0028])/);
-    private static const R_FLOWNONZERO : RegExp = new RegExp(/[\x00 \t\r\n\u0085\\\[\\\]{},:?]/);
-    private static const LINE_BR_REG : RegExp = new RegExp("[\n\u0085]|(?:\r[^\n])");
-    private static const END_OR_START : RegExp = new RegExp("^(---|\\.\\.\\.)[\0 \t\r\n\u0085]$");
-    private static const ENDING : RegExp = new RegExp("^---[\0 \t\r\n\u0085]$");
-    private static const START : RegExp = new RegExp("^\\.\\.\\.[\x00 \t\r\n\u0085]$");
-    private static const BEG : RegExp = new RegExp(/^([^\x00 \t\r\n\u0085\\\-?:,\\[\\\]{}#&*!|>'\"%@]|([\\\-?:][^\x00 \t\r\n\u0085]))/);
+    private const LINEBR : String = "\n\u0085\u2028\u2029";
+    private const NULL_BL_LINEBR : String = "\x00 \r\n\u0085";
+    private const NULL_BL_T_LINEBR : String = "\x00 \t\r\n\u0085";
+    private const NULL_OR_OTHER : String = NULL_BL_T_LINEBR;
+    private const NULL_OR_LINEBR : String = "\x00\r\n\u0085";
+    private const FULL_LINEBR : String = "\r\n\u0085";
+    private const BLANK_OR_LINEBR : String = " \r\n\u0085";
+    private const S4 : String = "\0 \t\r\n\u0028[]{}";    
+    private const ALPHA : String = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
+    private const STRANGE_CHAR : String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789][-';/?:@&=+$,.!~*()%";
+    private const RN : String = "\r\n";
+    private const BLANK_T : String = " \t";
+    private const SPACES_AND_STUFF : String = "'\"\\\x00 \t\r\n\u0085";
+    private const DOUBLE_ESC : String = "\"\\";
+    private const NON_ALPHA_OR_NUM : String = "\x00 \t\r\n\u0085?:,]}%@`";
+    private const NON_PRINTABLE : RegExp = new RegExp("[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\uD7FF\uE000-\uFFFD]");
+    private const NOT_HEXA : RegExp = new RegExp("[^0-9A-Fa-f]");
+    private const NON_ALPHA : RegExp = new RegExp("[^-0-9A-Za-z_]");
+    private const R_FLOWZERO : RegExp = new RegExp(/[\x00 \t\r\n\u0085]|(:[\x00 \t\r\n\u0028])/);
+    private const R_FLOWNONZERO : RegExp = new RegExp(/[\x00 \t\r\n\u0085\\\[\\\]{},:?]/);
+    private const LINE_BR_REG : RegExp = new RegExp("[\n\u0085]|(?:\r[^\n])");
+    private const END_OR_START : RegExp = new RegExp("^(---|\\.\\.\\.)[\0 \t\r\n\u0085]$");
+    private const ENDING : RegExp = new RegExp("^---[\0 \t\r\n\u0085]$");
+    private const START : RegExp = new RegExp("^\\.\\.\\.[\x00 \t\r\n\u0085]$");
+    private const BEG : RegExp = new RegExp(/^([^\x00 \t\r\n\u0085\\\-?:,\\[\\\]{}#&*!|>'\"%@]|([\\\-?:][^\x00 \t\r\n\u0085]))/);
 
-    private static var ESCAPE_REPLACEMENTS : Object = new Object();
-    private static var ESCAPE_CODES : Object = new Object();
+    private var ESCAPE_REPLACEMENTS : Object = new Object();
+    private var ESCAPE_CODES : Object = new Object();
 
-	static: { 
+	private function initEscapes(): void { 
         ESCAPE_REPLACEMENTS['0'] = "\x00";
         ESCAPE_REPLACEMENTS['a'] = "\u0007";
         ESCAPE_REPLACEMENTS['b'] = "\u0008";
@@ -98,6 +99,7 @@ public class Scanner {
     private var docStart : Boolean = false;
 
     public function Scanner(stream : String) {
+    	initEscapes();
         this.buffer = new StringReader(stream);
         this.tokens = new Array();
         this.indents = new Array();
@@ -116,7 +118,8 @@ public class Scanner {
                 return true;
             }
            var first : Class = this.tokens.get(0) as Class;
-            for (var i : int = 0; i < choices.length; i++) {
+           var len: int = choices.length;
+            for (var i : int = 0; i < len; i++) {
                 if(choices[i] is first) {
                     return true;
                 }
@@ -154,11 +157,11 @@ public class Scanner {
         return buffer.peek(offset);
     }
 
-    private function prefix(length : int) : String {
+    private function prefix(length : int, offset: int = 0) : String {
         if(length > buffer.charsAvailable) {
             return buffer.peekRemaining()
         } else {
-            return buffer.peekFor(length);
+            return buffer.peekFor(length, offset);
         }
     }
 
@@ -170,7 +173,8 @@ public class Scanner {
             buff = buffer.readFor(length);
         }
         var ch : String;
-        for(var i:int=0,j:int=buff.length;i<j;i++) {
+        var j:int = buff.length;
+        for(var i:int=0; i<j; i++) {
             ch = buff.charAt(i);
             if(LINEBR.indexOf(ch) != -1 || (ch == '\r' && buff.charAt(i+1) != '\n')) {
                 this.column = 0;
@@ -994,15 +998,15 @@ public class Scanner {
         }
         while(buffer.peek() != '#') {
         	
-            var length : int = 0;
             var chunkSize : int = 256;
+            var startAt: int = 0;
             var match: Object;
  
-            while(!(match = r_check.exec(prefix(chunkSize)))) {
-                chunkSize += 256;
+            while(!(match = r_check.exec(prefix(chunkSize, startAt)))) {
+                startAt += chunkSize;
             }
             
-            length = match.index;
+            const length: int = startAt + int(match.index);
             var ch : String = buffer.peek(length);
             if(f_nzero && ch == ':' && S4.indexOf(buffer.peek(length+1)) == -1) {
                 forwardBy(length);

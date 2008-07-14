@@ -25,7 +25,6 @@ import flash.utils.Dictionary;
 
 import org.as3yaml.events.*;
 import org.as3yaml.nodes.*;
-import org.idmedia.as3commons.util.*;
 
 public class Composer {
     private var parser : Parser;
@@ -148,7 +147,6 @@ public class Composer {
 }
 }
 
-import org.idmedia.as3commons.util.Iterator;
 import org.as3yaml.Composer;
 import org.as3yaml.nodes.Node;
 	

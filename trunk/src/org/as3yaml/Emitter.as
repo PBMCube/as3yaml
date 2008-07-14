@@ -243,8 +243,8 @@ public class Emitter {
                     start = ending;
                 }
                 if(ch != 0) {
-                    if(YAML.ESCAPE_REPLACEMENTS.containsKey(ch)) {
-                        data = "\\" + YAML.ESCAPE_REPLACEMENTS.get(ch);
+                    if(YAML.ESCAPE_REPLACEMENTS[ch]) {
+                        data = "\\" + YAML.ESCAPE_REPLACEMENTS[ch];
                     } else if(ch <= '\u00FF') {
                         var str : String = new int(ch).toString(16);
                         if(str.length == 1) {

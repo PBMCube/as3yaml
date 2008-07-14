@@ -33,7 +33,7 @@ import org.idmedia.as3commons.util.ArrayList;
 import org.idmedia.as3commons.util.Collection;
 import org.idmedia.as3commons.util.HashMap;
 import org.idmedia.as3commons.util.Map;
-import org.idmedia.as3commons.util.StringUtils;
+import org.as3yaml.util.StringUtils;
 
 public class SafeConstructor extends BaseConstructor {
     private static var yamlConstructors : Dictionary = new Dictionary();

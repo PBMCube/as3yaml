@@ -28,76 +28,70 @@ import flash.utils.getQualifiedClassName;
 import org.as3yaml.events.*;
 import org.as3yaml.tokens.*;
 import org.idmedia.as3commons.util.*;
+import org.as3yaml.util.StringUtils;
 
 public class Parser {
     // Memnonics for the production table
-    private static const P_STREAM: int = 0;
-    private static const P_STREAM_START: int = 1; // TERMINAL
-    private static const P_STREAM_END: int = 2; // TERMINAL
-    private static const P_IMPLICIT_DOCUMENT: int = 3;
-    private static const P_EXPLICIT_DOCUMENT: int = 4;
-    private static const P_DOCUMENT_START: int = 5;
-    private static const P_DOCUMENT_START_IMPLICIT: int = 6;
-    private static const P_DOCUMENT_END: int = 7;
-    private static const P_BLOCK_NODE: int = 8;
-    private static const P_BLOCK_CONTENT: int = 9;
-    private static const P_PROPERTIES: int = 10;
-    private static const P_PROPERTIES_END: int = 11;
-    private static const P_FLOW_CONTENT: int = 12;
-    private static const P_BLOCK_SEQUENCE: int = 13;
-    private static const P_BLOCK_MAPPING: int = 14;
-    private static const P_FLOW_SEQUENCE: int = 15;
-    private static const P_FLOW_MAPPING: int = 16;
-    private static const P_SCALAR: int = 17;
-    private static const P_BLOCK_SEQUENCE_ENTRY: int = 18;
-    private static const P_BLOCK_MAPPING_ENTRY: int = 19;
-    private static const P_BLOCK_MAPPING_ENTRY_VALUE: int = 20;
-    private static const P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE: int = 21;
-    private static const P_BLOCK_SEQUENCE_START: int = 22;
-    private static const P_BLOCK_SEQUENCE_END: int = 23;
-    private static const P_BLOCK_MAPPING_START: int = 24;
-    private static const P_BLOCK_MAPPING_END: int = 25;
-    private static const P_INDENTLESS_BLOCK_SEQUENCE: int = 26;
-    private static const P_BLOCK_INDENTLESS_SEQUENCE_START: int = 27;
-    private static const P_INDENTLESS_BLOCK_SEQUENCE_ENTRY: int = 28;
-    private static const P_BLOCK_INDENTLESS_SEQUENCE_END: int = 29;
-    private static const P_FLOW_SEQUENCE_START: int = 30;
-    private static const P_FLOW_SEQUENCE_ENTRY: int = 31;
-    private static const P_FLOW_SEQUENCE_END: int = 32;
-    private static const P_FLOW_MAPPING_START: int = 33;
-    private static const P_FLOW_MAPPING_ENTRY: int = 34;
-    private static const P_FLOW_MAPPING_END: int = 35;
-    private static const P_FLOW_INTERNAL_MAPPING_START: int = 36;
-    private static const P_FLOW_INTERNAL_CONTENT: int = 37;
-    private static const P_FLOW_INTERNAL_VALUE: int = 38;
-    private static const P_FLOW_INTERNAL_MAPPING_END: int = 39;
-    private static const P_FLOW_ENTRY_MARKER: int = 40;
-    private static const P_FLOW_NODE: int = 41;
-    private static const P_FLOW_MAPPING_INTERNAL_CONTENT: int = 42;
-    private static const P_FLOW_MAPPING_INTERNAL_VALUE: int = 43;
-    private static const P_ALIAS: int = 44;
-    private static const P_EMPTY_SCALAR: int = 45;
+    private const P_STREAM: int = 0;
+    private const P_STREAM_START: int = 1; // TERMINAL
+    private const P_STREAM_END: int = 2; // TERMINAL
+    private const P_IMPLICIT_DOCUMENT: int = 3;
+    private const P_EXPLICIT_DOCUMENT: int = 4;
+    private const P_DOCUMENT_START: int = 5;
+    private const P_DOCUMENT_START_IMPLICIT: int = 6;
+    private const P_DOCUMENT_END: int = 7;
+    private const P_BLOCK_NODE: int = 8;
+    private const P_BLOCK_CONTENT: int = 9;
+    private const P_PROPERTIES: int = 10;
+    private const P_PROPERTIES_END: int = 11;
+    private const P_FLOW_CONTENT: int = 12;
+    private const P_BLOCK_SEQUENCE: int = 13;
+    private const P_BLOCK_MAPPING: int = 14;
+    private const P_FLOW_SEQUENCE: int = 15;
+    private const P_FLOW_MAPPING: int = 16;
+    private const P_SCALAR: int = 17;
+    private const P_BLOCK_SEQUENCE_ENTRY: int = 18;
+    private const P_BLOCK_MAPPING_ENTRY: int = 19;
+    private const P_BLOCK_MAPPING_ENTRY_VALUE: int = 20;
+    private const P_BLOCK_NODE_OR_INDENTLESS_SEQUENCE: int = 21;
+    private const P_BLOCK_SEQUENCE_START: int = 22;
+    private const P_BLOCK_SEQUENCE_END: int = 23;
+    private const P_BLOCK_MAPPING_START: int = 24;
+    private const P_BLOCK_MAPPING_END: int = 25;
+    private const P_INDENTLESS_BLOCK_SEQUENCE: int = 26;
+    private const P_BLOCK_INDENTLESS_SEQUENCE_START: int = 27;
+    private const P_INDENTLESS_BLOCK_SEQUENCE_ENTRY: int = 28;
+    private const P_BLOCK_INDENTLESS_SEQUENCE_END: int = 29;
+    private const P_FLOW_SEQUENCE_START: int = 30;
+    private const P_FLOW_SEQUENCE_ENTRY: int = 31;
+    private const P_FLOW_SEQUENCE_END: int = 32;
+    private const P_FLOW_MAPPING_START: int = 33;
+    private const P_FLOW_MAPPING_ENTRY: int = 34;
+    private const P_FLOW_MAPPING_END: int = 35;
+    private const P_FLOW_INTERNAL_MAPPING_START: int = 36;
+    private const P_FLOW_INTERNAL_CONTENT: int = 37;
+    private const P_FLOW_INTERNAL_VALUE: int = 38;
+    private const P_FLOW_INTERNAL_MAPPING_END: int = 39;
+    private const P_FLOW_ENTRY_MARKER: int = 40;
+    private const P_FLOW_NODE: int = 41;
+    private const P_FLOW_MAPPING_INTERNAL_CONTENT: int = 42;
+    private const P_FLOW_MAPPING_INTERNAL_VALUE: int = 43;
+    private const P_ALIAS: int = 44;
+    private const P_EMPTY_SCALAR: int = 45;
 
-    private static var DOCUMENT_END_TRUE: Event  = new DocumentEndEvent(true);
-    private static var DOCUMENT_END_FALSE: Event  = new DocumentEndEvent(false);
-    private static var MAPPING_END: Event  = new MappingEndEvent();
-    private static var SEQUENCE_END: Event  = new SequenceEndEvent();
-    private static var STREAM_END: Event  = new StreamEndEvent();
-    private static var STREAM_START: Event  = new StreamStartEvent();
+    private var DOCUMENT_END_TRUE: Event  = new DocumentEndEvent(true);
+    private var DOCUMENT_END_FALSE: Event  = new DocumentEndEvent(false);
+    private var MAPPING_END: Event  = new MappingEndEvent();
+    private var SEQUENCE_END: Event  = new SequenceEndEvent();
+    private var STREAM_END: Event  = new StreamEndEvent();
+    private var STREAM_START: Event  = new StreamStartEvent();
 
-    private static const P_TABLE : Array = [];
+    private const P_TABLE : Array = [];
 
-    private static var DEFAULT_TAGS_1_0 : Map = new HashMap();
-    private static var DEFAULT_TAGS_1_1 : Map = new HashMap();
-    /*static*/ {
-        DEFAULT_TAGS_1_0.put("!","tag:yaml.org,2002:");
-		DEFAULT_TAGS_1_0.put("!!","");
-
-        DEFAULT_TAGS_1_1.put("!","!");
-        DEFAULT_TAGS_1_1.put("!!","tag:yaml.org,2002:");
-    }
-
-	private static var ONLY_WORD : RegExp = new RegExp("^\\w+$");
+    private var DEFAULT_TAGS_1_0 : Map = new HashMap();
+    private var DEFAULT_TAGS_1_1 : Map = new HashMap();
+	
+	private var ONLY_WORD : RegExp = new RegExp("^\\w+$");
 
     private var tags:Array;
     private var anchors:Array;
@@ -605,6 +599,13 @@ public class Parser {
     private var cfg : YAMLConfig = null;
 
     public function Parser(scanner : Scanner, cfg : YAMLConfig) {
+
+        DEFAULT_TAGS_1_0.put("!","tag:yaml.org,2002:");
+		DEFAULT_TAGS_1_0.put("!!","");
+
+        DEFAULT_TAGS_1_1.put("!","!");
+        DEFAULT_TAGS_1_1.put("!!","tag:yaml.org,2002:");        
+        
         this.scanner = scanner;
         this.tags = new Array();
         this.anchors = new Array();

@@ -238,9 +238,11 @@ public class YAML {
      */    
     public static function decode (yaml : String) : Object
     {
+    	
+    	var cfg: DefaultYAMLConfig = new DefaultYAMLConfig();
 		var obj : Object = YAML.load(yaml, 
 									 new DefaultYAMLFactory(),
-									 new DefaultYAMLConfig());
+									 cfg);
 		return obj;
     }
 
