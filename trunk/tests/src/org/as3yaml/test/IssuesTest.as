@@ -45,8 +45,10 @@ package org.as3yaml.test
 			
 		public function onTestIssueFour(event : Event, ldr : URLLoader) : void
 		{
+			var data: String = ldr.data;
 			var start: Number = flash.utils.getTimer();
-			var yaml : Dictionary  = YAML.decode(ldr.data) as Dictionary;
+			var yaml : Dictionary  = YAML.decode(data) as Dictionary;
+			trace(flash.utils.getTimer() - start);
 	        assertTrue((flash.utils.getTimer() - start) < 300);			
 		}
 		
@@ -67,7 +69,18 @@ package org.as3yaml.test
 			assertEquals(nov.toDateString(), "Mon Nov 12 2007");
 			assertEquals(feb.month, 1);
 			assertEquals(feb.toDateString(), "Mon Feb 4 2008")
-		}		
+		}
+		
+		public function testIssueTen() : void
+		{
+			var s:String = '';
+			for (var i:uint = 0;i<184000;i++) {s +='x';}
+			var ystr:String = "---\n field1 : value1\n field2 : " + s + "\n";
+			var start: Number = flash.utils.getTimer();   
+			var d:Dictionary = YAML.decode(ystr) as Dictionary;
+			assertTrue((flash.utils.getTimer() - start) < 1000);			
+			
+		}				
 			
 	}
 }
