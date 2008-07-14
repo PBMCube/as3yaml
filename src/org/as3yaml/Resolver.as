@@ -26,7 +26,6 @@ package org.as3yaml {
 import flash.utils.Dictionary;
 
 import org.as3yaml.nodes.*;
-import org.idmedia.as3commons.util.*;
 import org.rxr.actionscript.io.StringReader;
 
 public class Resolver {
@@ -49,61 +48,61 @@ public class Resolver {
         }
     }
 
-    public static function addPathResolver(tag : String, path : List, kind : Class) : void {
-        var newPath : Array = new Array();
-        var nodeCheck : Object = null;
-        var indexCheck : Object = null;
-        for(var iter : Iterator = path.iterator();iter.hasNext();) {
-            var element : Object = iter.next();
-            if(element is List) {
-                var eList : List = element as List;
-                if(eList.size() == 2) {
-                    nodeCheck = eList.get(0);
-                    indexCheck = eList.get(1);
-                } else if(eList.size() == 1) {
-                    nodeCheck = eList.get(0);
-                    indexCheck = true;
-                } else {
-                    throw new ResolverException("Invalid path element: " + element);
-                }
-            } else {
-                nodeCheck = null;
-                indexCheck = element;
-            }
-
-            if(nodeCheck is String) {
-                nodeCheck = ScalarNode;
-            } else if(nodeCheck is List) {
-                nodeCheck = SequenceNode;
-            } else if(nodeCheck is Map) {
-                nodeCheck = MappingNode;
-            } else if(null != nodeCheck && !ScalarNode == (nodeCheck) && !SequenceNode == (nodeCheck) && !MappingNode == (nodeCheck)) {
-                throw new ResolverException("Invalid node checker: " + nodeCheck);
-            }
-            if(!(indexCheck is String || indexCheck is int) && null != indexCheck) {
-                throw new ResolverException("Invalid index checker: " + indexCheck);
-            }
-            newPath.push([nodeCheck,indexCheck]);
-        }
-        var newKind : Class = null;
-        if(String == kind) {
-            newKind = ScalarNode;
-        } else if(List == kind) {
-            newKind = SequenceNode;
-        } else if(Map == kind) {
-            newKind = MappingNode;
-        } else if(kind != null && !ScalarNode == kind && !SequenceNode == kind && !MappingNode == kind) {
-            throw new ResolverException("Invalid node kind: " + kind);
-        } else {
-            newKind = kind;
-        }
-        var x : Array = new Array();
-        x.push(newPath);
-        var y : Array = new Array();
-        y.push(x);
-        y.push(kind);
-        yamlPathResolvers[y] = tag;
-    }
+//    public static function addPathResolver(tag : String, path : List, kind : Class) : void {
+//        var newPath : Array = new Array();
+//        var nodeCheck : Object = null;
+//        var indexCheck : Object = null;
+//        for(var iter : Iterator = path.iterator();iter.hasNext();) {
+//            var element : Object = iter.next();
+//            if(element is List) {
+//                var eList : List = element as List;
+//                if(eList.size() == 2) {
+//                    nodeCheck = eList.get(0);
+//                    indexCheck = eList.get(1);
+//                } else if(eList.size() == 1) {
+//                    nodeCheck = eList.get(0);
+//                    indexCheck = true;
+//                } else {
+//                    throw new ResolverException("Invalid path element: " + element);
+//                }
+//            } else {
+//                nodeCheck = null;
+//                indexCheck = element;
+//            }
+//
+//            if(nodeCheck is String) {
+//                nodeCheck = ScalarNode;
+//            } else if(nodeCheck is List) {
+//                nodeCheck = SequenceNode;
+//            } else if(nodeCheck is Map) {
+//                nodeCheck = MappingNode;
+//            } else if(null != nodeCheck && !ScalarNode == (nodeCheck) && !SequenceNode == (nodeCheck) && !MappingNode == (nodeCheck)) {
+//                throw new ResolverException("Invalid node checker: " + nodeCheck);
+//            }
+//            if(!(indexCheck is String || indexCheck is int) && null != indexCheck) {
+//                throw new ResolverException("Invalid index checker: " + indexCheck);
+//            }
+//            newPath.push([nodeCheck,indexCheck]);
+//        }
+//        var newKind : Class = null;
+//        if(String == kind) {
+//            newKind = ScalarNode;
+//        } else if(List == kind) {
+//            newKind = SequenceNode;
+//        } else if(Map == kind) {
+//            newKind = MappingNode;
+//        } else if(kind != null && !ScalarNode == kind && !SequenceNode == kind && !MappingNode == kind) {
+//            throw new ResolverException("Invalid node kind: " + kind);
+//        } else {
+//            newKind = kind;
+//        }
+//        var x : Array = new Array();
+//        x.push(newPath);
+//        var y : Array = new Array();
+//        y.push(x);
+//        y.push(kind);
+//        yamlPathResolvers[y] = tag;
+//    }
 
     public function descendResolver(currentNode : Node, currentIndex : Object) : void {
         var exactPaths : Dictionary = new Dictionary();

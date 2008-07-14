@@ -38,6 +38,7 @@ public class DefaultYAMLConfig implements YAMLConfig {
     private var _usePlain:Boolean= false;
     private var _useSingle:Boolean= false;
     private var _useDouble:Boolean= false;
+    private var _processorFunction: Function = null;
     
     public function indent(indent:int):YAMLConfig{ _indent = indent; return this; }
     public function getIndent():int{ return _indent; }
@@ -75,5 +76,6 @@ public class DefaultYAMLConfig implements YAMLConfig {
     public function getUseSingle():Boolean{ return _useSingle; }
 
     public function getUseDouble():Boolean{ return _useDouble; }
+    
 }
 }

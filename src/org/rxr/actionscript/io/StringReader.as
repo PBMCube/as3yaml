@@ -28,11 +28,11 @@ package org.rxr.actionscript.io
 			return source.charAt(position + offset);
 		}
 		
-		public function peekFor(length: uint): String
+		public function peekFor(length: uint, offset:int = 0): String
 		{
-			return source.substr(position, length);
+			return source.substr(position + offset, length);
 		}
-		
+
 		public function peekRemaining(): String
 		{
 			return peekFor(charsAvailable);

@@ -148,7 +148,6 @@ import org.idmedia.as3commons.util.List;
 import org.as3yaml.nodes.Node;
 import org.as3yaml.Representer;
 import org.idmedia.as3commons.util.HashMap;
-import org.idmedia.as3commons.util.StringUtils;
 import mx.utils.ObjectUtil;
 import flash.utils.ByteArray;
 import mx.utils.Base64Encoder;
