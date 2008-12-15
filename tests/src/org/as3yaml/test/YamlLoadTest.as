@@ -47,6 +47,12 @@ package org.as3yaml.test
 		    assertEquals(-1,YAML.decode("-1"));
 		}
 		
+		public function testBasicFloatLoad() : void 
+		{
+		    assertEquals(47.3,YAML.decode("47.3"));
+		    assertEquals(-10.5,YAML.decode("-10.5"));
+		}	
+			
 		public function testBasicListLoad() : void 
 		{	
 	        var ex : Array = new Array("a", "b", "c");

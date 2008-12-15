@@ -49,7 +49,7 @@ package org.as3yaml.test
 			var start: Number = flash.utils.getTimer();
 			var yaml : Dictionary  = YAML.decode(data) as Dictionary;
 			trace(flash.utils.getTimer() - start);
-	        assertTrue((flash.utils.getTimer() - start) < 300);			
+	        assertTrue((flash.utils.getTimer() - start) < 350);			
 		}
 		
 		public function testIssueFive() : void
@@ -81,6 +81,21 @@ package org.as3yaml.test
 			assertTrue((flash.utils.getTimer() - start) < 1000);			
 			
 		}				
+
+		public function testIssueTwelve() : void
+		{
+			var loader : URLLoader =  new URLLoader();
+			loader.load(new URLRequest('org/as3yaml/test/files/issue12.yaml'));
+			loader.addEventListener(Event.COMPLETE, addAsync(onTestIssueTwelve, 2000, loader));
+		}
+			
+		public function onTestIssueTwelve(event : Event, ldr : URLLoader) : void
+		{
+			var data: String = ldr.data;
+			var foos : Array  = YAML.decode(data).Foos as Array;
+	        assertTrue(foos[0].id, 4);	
+	        assertTrue(foos[2].name, 3004359912);		
+		}
 			
 	}
 }
