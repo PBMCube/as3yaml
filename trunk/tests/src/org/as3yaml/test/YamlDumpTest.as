@@ -55,7 +55,7 @@ package org.as3yaml.test
 		    testObj.firstname = "Derek";
 		    testObj.lastname = "Wischusen";
 		    testObj.birthday = new Date(1979, 11, 25);
-		    assertEquals("--- !actionscript/object:org.as3yaml.test.TestActionScriptObject\nbirthday: 1979-12-25 24:00:00 -04:00\nfirstname: Derek\nlastname: Wischusen\n", YAML.encode(testObj));
+		    assertEquals("--- !actionscript/object:org.as3yaml.test.TestActionScriptObject\nbirthday: 1979-12-25 24:00:00 -05:00\nfirstname: Derek\nlastname: Wischusen\n", YAML.encode(testObj));
 		   
 		}
 		
