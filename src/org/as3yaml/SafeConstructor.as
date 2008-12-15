@@ -26,19 +26,14 @@ import flash.utils.getDefinitionByName;
 import flash.utils.getQualifiedClassName;
 
 import mx.utils.Base64Decoder;
-import mx.utils.ObjectUtil;
 
 import org.as3yaml.nodes.Node;
-import org.idmedia.as3commons.util.ArrayList;
-import org.idmedia.as3commons.util.Collection;
-import org.idmedia.as3commons.util.HashMap;
-import org.idmedia.as3commons.util.Map;
 import org.as3yaml.util.StringUtils;
 
 public class SafeConstructor extends BaseConstructor {
     private static var yamlConstructors : Dictionary = new Dictionary();
     private static var yamlMultiConstructors : Dictionary = new Dictionary();
-    private static var yamlMultiRegexps : Map = new HashMap();
+    private static var yamlMultiRegexps : Dictionary = new Dictionary();
    
     override public function getYamlConstructor(key:Object) : Function {
   	
@@ -69,23 +64,28 @@ public class SafeConstructor extends BaseConstructor {
         return mine;
     }
 
-    override public function getYamlMultiRegexps() : Map {
-        var all : Map = new HashMap();
-        all.putAll(super.getYamlMultiRegexps());
-        all.putAll(yamlMultiRegexps);
-        return all;
+    override public function getYamlMultiRegexps() : Dictionary {
+    	
+    	var superMultiRegExps: Dictionary = super.getYamlMultiRegexps();
+    	for (var key: String in superMultiRegExps)
+    		yamlMultiRegexps[key] = superMultiRegExps[key];
+    	
+        return yamlMultiRegexps;
     }
 
-    public static function addConstructor(tag : String, ctor : Function) : void {
+    override public function addConstructor(tag : String, ctor : Function) : void {
+    	super.addConstructor(tag, ctor);
         yamlConstructors[tag] = ctor;
     }
 
-    public static function addMultiConstructor(tagPrefix : String, ctor : Function) : void {
+    override public function addMultiConstructor(tagPrefix : String, ctor : Function) : void {
+    	super.addMultiConstructor(tagPrefix, ctor);
         yamlMultiConstructors[tagPrefix] = ctor;
-        yamlMultiRegexps.put(tagPrefix, new RegExp("^"+tagPrefix));
+        yamlMultiRegexps[tagPrefix] = new RegExp("^"+tagPrefix);
     }
 
     public function SafeConstructor(composer : Composer) {
+    	initConstructors();
         super(composer);
     }
 
@@ -98,33 +98,33 @@ public class SafeConstructor extends BaseConstructor {
 										        off     : false
     										  };
 
-    public static function constructYamlNull(ctor : Constructor, node : Node) : Object {
+    public function constructYamlNull(ctor : Constructor, node : Node) : Object {
         return null;
     }
     
-    public static function constructYamlBool(ctor : Constructor, node : Node) : Object {
+    public function constructYamlBool(ctor : Constructor, node : Node) : Object {
         var val : String = ctor.constructScalar(node) as String;
         return BOOL_VALUES[val.toLowerCase()];
     }
 
-    public static function constructYamlOmap(ctor : Constructor, node : Node) : Object {
+    public function constructYamlOmap(ctor : Constructor, node : Node) : Object {
         return ctor.constructOmap(node);
     }
 
-    public static function constructYamlPairs(ctor : Constructor, node : Node) : Object {
+    public function constructYamlPairs(ctor : Constructor, node : Node) : Object {
         return ctor.constructPairs(node); 
     }
 
-    public static function constructYamlSet(ctor : Constructor, node : Node) : Object {
-        return Map(ctor.constructMapping(node)).keySet();
+    public function constructYamlSet(ctor : Constructor, node : Node) : Object {
+        return ctor.constructMapping(node);
     }
 
-    public static function constructYamlStr(ctor : Constructor, node : Node) : Object {
+    public function constructYamlStr(ctor : Constructor, node : Node) : Object {
         var value : String = ctor.constructScalar(node) as String;
         return value.length == 0 ? null : value;
     }
 
-    public static function constructYamlSeq(ctor : Constructor, node : Node) : Object {
+    public function constructYamlSeq(ctor : Constructor, node : Node) : Object {
         return ctor.constructSequence(node);
     }
 
@@ -132,13 +132,13 @@ public class SafeConstructor extends BaseConstructor {
         return ctor.constructMapping(node);
     }
 
-    public static function constructUndefined(ctor : Constructor, node : Node) : Object {
+    public function constructUndefined(ctor : Constructor, node : Node) : Object {
         throw new ConstructorException(null,"could not determine a constructor for the tag " + node.getTag(),null);
     }
 
-    private static var TIMESTAMP_REGEXP : RegExp = new RegExp("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:(?:[Tt]|[ \t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\\.([0-9]*))?(?:[ \t]*(?:Z|([-+][0-9][0-9]?)(?::([0-9][0-9])?)?))?)?$");
-    private static var YMD_REGEXP : RegExp = new RegExp("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)$");
-    public static function constructYamlTimestamp(ctor : Constructor, node : Node) : Object {
+    private var TIMESTAMP_REGEXP : RegExp = new RegExp("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)(?:(?:[Tt]|[ \t]+)([0-9][0-9]?):([0-9][0-9]):([0-9][0-9])(?:\\.([0-9]*))?(?:[ \t]*(?:Z|([-+][0-9][0-9]?)(?::([0-9][0-9])?)?))?)?$");
+    private var YMD_REGEXP : RegExp = new RegExp("^([0-9][0-9][0-9][0-9])-([0-9][0-9]?)-([0-9][0-9]?)$");
+    public function constructYamlTimestamp(ctor : Constructor, node : Node) : Object {
         var match : Object = YMD_REGEXP.exec(String(node.getValue()));
 
         var year_s : String;
@@ -217,7 +217,7 @@ public class SafeConstructor extends BaseConstructor {
         return time;
     }
 
-    public static function constructYamlInt(ctor : Constructor, node : Node) : Object {
+    public function constructYamlInt(ctor : Constructor, node : Node) : Object {
         var value : String = String(ctor.constructScalar(node)).replace(/_/g,"");
         var sign : int = +1;
         var first : String = value.charAt(0);
@@ -254,11 +254,11 @@ public class SafeConstructor extends BaseConstructor {
         return (sign * parseInt(value, base));
     }
 
-    private static var INF_VALUE_POS : Number  = new Number(Number.POSITIVE_INFINITY);
-    private static var INF_VALUE_NEG : Number = new Number(Number.NEGATIVE_INFINITY);
-    private static var NAN_VALUE : Number = new Number(Number.NaN);
+    private var INF_VALUE_POS : Number  = new Number(Number.POSITIVE_INFINITY);
+    private var INF_VALUE_NEG : Number = new Number(Number.NEGATIVE_INFINITY);
+    private var NAN_VALUE : Number = new Number(Number.NaN);
 
-    public static function constructYamlFloat(ctor : Constructor, node : Node) : Object {
+    public function constructYamlFloat(ctor : Constructor, node : Node) : Object {
         var value : String = String(ctor.constructScalar(node).toString()).replace(/'_'/g,"");
         var sign : int = +1;
         var first : String = value.charAt(0);
@@ -283,13 +283,13 @@ public class SafeConstructor extends BaseConstructor {
             }
             return new Number(sign*val);
         } else {
-            return Number(value);
+            return Number(value) * sign;
         }
     }    
 
-    public static function constructYamlBinary(ctor : Constructor, node : Node) : Object {
+    public function constructYamlBinary(ctor : Constructor, node : Node) : Object {
         var values : Array = ctor.constructScalar(node).toString().split("[\n\u0085]|(?:\r[^\n])");
-        var vals : String = new String();
+        var vals : String = '';
         for(var i:int=0,j:int=values.length;i<j;i++) {
             vals += (values[i]);
         }
@@ -298,33 +298,33 @@ public class SafeConstructor extends BaseConstructor {
         return decoder.flush();
     }
 
-    public static function constructSpecializedSequence(ctor : Constructor, pref : String, node : Node) : Object {
-        var outp : ArrayList = null;
+    public function constructSpecializedSequence(ctor : Constructor, pref : String, node : Node) : Object {
+        var outp : Array = null;
         try {
             var seqClass : Object = getDefinitionByName(pref) as Class;
-            outp = new seqClass() as ArrayList;
+            outp = new seqClass() as Array;
         } catch(e : Error) {
             throw new YAMLException("Can't construct a sequence from class " + pref + ": " + e.toString());
         }
-        var coll : Collection = ctor.constructSequence(node) as Collection;
-        outp.addAll(coll);
+        var coll : Array = ctor.constructSequence(node) as Array;
+        outp.concat(coll);
         return outp;
     }
 
-    public static function constructSpecializedMap(ctor : Constructor, pref : String, node : Node) : Object {
-        var outp : Map = null;
-        try {
-            var mapClass : Class = getDefinitionByName(pref) as Class;
-            outp = new mapClass();
-        } catch(e : Error) {
-            throw new YAMLException("Can't construct a mapping from class " + pref + ": " + e.toString());
-        }
-        var coll : Map = ctor.constructMapping(node) as Map;
-        outp.putAll(coll);
-        return outp;
+    public function constructSpecializedMap(ctor : Constructor, pref : String, node : Node) : Object {
+//        var outp : Map = null;
+//        try {
+//            var mapClass : Class = getDefinitionByName(pref) as Class;
+//            outp = new mapClass();
+//        } catch(e : Error) {
+//            throw new YAMLException("Can't construct a mapping from class " + pref + ": " + e.toString());
+//        }
+//        var coll : Map = ctor.constructMapping(node) as Map;
+//        outp.putAll(coll);
+        return {};
     }
 
-    private static function fixValue(inp : Object, outp : Class) : Object {
+    private function fixValue(inp : Object, outp : Class) : Object {
         if(inp == null) {
             return null;
         }
@@ -343,13 +343,12 @@ public class SafeConstructor extends BaseConstructor {
         return inp;
     }
 
-    public static function constructActionscript(ctor : Constructor, pref : String, node : Node) : Object {
+    public function constructActionscript(ctor : Constructor, pref : String, node : Node) : Object {
         var outp : Object = null;
         try {
             var cl : Class = getDefinitionByName(pref) as Class;
             outp = new cl();
             var values : Dictionary = Dictionary(ctor.constructMapping(node));
-            var props : Array = ObjectUtil.getClassInfo(outp).properties;
             for(var key : Object in values) {
                 var value : Object = values[key];
 				outp[key] = value;
@@ -360,8 +359,8 @@ public class SafeConstructor extends BaseConstructor {
         return outp;
     }
 
-    static: {
-        BaseConstructor.addConstructor("tag:yaml.org,2002:null", function call(self : Constructor, node : Node) : Object {
+   private function initConstructors(): void {
+        super.addConstructor("tag:yaml.org,2002:null", function call(self : Constructor, node : Node) : Object {
                     return constructYamlNull(self,node);
             });
         addConstructor("tag:yaml.org,2002:bool", function call(self : Constructor, node : Node) : Object {

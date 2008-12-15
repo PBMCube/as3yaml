@@ -26,14 +26,18 @@ package org.as3yaml {
 import flash.utils.Dictionary;
 
 import org.as3yaml.nodes.*;
-import org.rxr.actionscript.io.StringReader;
 
 public class Resolver {
+
+    public static const DEFAULT_SCALAR_TAG : String = "tag:yaml.org,2002:str";
+    public static const DEFAULT_SEQUENCE_TAG : String = "tag:yaml.org,2002:seq";
+    public static const DEFAULT_MAPPING_TAG : String = "tag:yaml.org,2002:map";	
+	
     private static var yamlImplicitResolvers : Dictionary = new Dictionary();
     private static var yamlPathResolvers : Dictionary = new Dictionary();
 
-    private var resolverExactPaths : Array = new Array();
-    private var resolverPrefixPaths : Array = new Array();
+    private var resolverExactPaths : Array = [];
+    private var resolverPrefixPaths : Array = [];
 
     public static function addImplicitResolver(tag : String, regexp : RegExp, first : String) : void {
         var firstVal : String = (null == first)?"":first;
@@ -41,7 +45,7 @@ public class Resolver {
             var theC : String = firstVal.charAt(i);
             var curr : Array = yamlImplicitResolvers[theC] as Array;
             if(curr == null) {
-                curr = new Array();
+                curr = [];
                 yamlImplicitResolvers[theC] = curr;
             }
             curr.push([tag,regexp]);
@@ -106,17 +110,19 @@ public class Resolver {
 
     public function descendResolver(currentNode : Node, currentIndex : Object) : void {
         var exactPaths : Dictionary = new Dictionary();
-        var prefixPaths : Array = new Array();
+        var prefixPaths : Array = [];
         if(null != currentNode) {
             var depth : int = resolverPrefixPaths.length;
-            for(var xi:int=0; xi < resolverPrefixPaths[0].length; xi++) {
-                var obj : Array = resolverPrefixPaths[0][xi] as Array;
+            var paths: Array = resolverPrefixPaths[0] as Array;
+            var pathsLen: int = paths.length;
+            for(var xi:int=0; xi < pathsLen; xi++) {
+                var obj : Array = paths[xi] as Array;
                 var path : Array = obj[0] as Array;
                 if(checkResolverPrefix(depth,path, obj[1],currentNode,currentIndex)) {
                     if(path.size() > depth) {
                         prefixPaths.push([path,obj[1]]);
                     } else {
-                        var resPath : Array = new Array();
+                        var resPath : Array = [];
                         resPath.push(path);
                         resPath.push(obj[1]);
                         exactPaths[obj[1]] = yamlPathResolvers[resPath];
@@ -187,7 +193,7 @@ public class Resolver {
                 resolvers = new Array();
             }
             if(yamlImplicitResolvers[null]) {
-                resolvers.concat(yamlImplicitResolvers[null]);
+                resolvers.splice(resolvers.length-1,0,yamlImplicitResolvers[null]);
             }
             for(var xi:int=0; xi < resolvers.length; xi++) {
                 var val : Array = resolvers[xi];
@@ -204,11 +210,11 @@ public class Resolver {
             return exactPaths[null] as String;
         }
         if(kind == ScalarNode) {
-            return YAML.DEFAULT_SCALAR_TAG;
+            return DEFAULT_SCALAR_TAG;
         } else if(kind == SequenceNode) {
-            return YAML.DEFAULT_SEQUENCE_TAG;
+            return DEFAULT_SEQUENCE_TAG;
         } else if(kind == MappingNode) {
-            return YAML.DEFAULT_MAPPING_TAG;
+            return DEFAULT_MAPPING_TAG;
         }
         return null;
     } 

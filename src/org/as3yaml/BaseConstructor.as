@@ -24,15 +24,12 @@ package org.as3yaml {
 import flash.utils.Dictionary;
 import flash.utils.getQualifiedClassName;
 
-import mx.logging.LogLogger;
-
 import org.as3yaml.nodes.*;
-import org.idmedia.as3commons.util.*;
 
 public class BaseConstructor implements Constructor {
     private static var yamlConstructors : Dictionary = new Dictionary();
     private static var yamlMultiConstructors : Dictionary = new Dictionary();
-    private static var yamlMultiRegexps : Map = new HashMap();
+    private static var yamlMultiRegexps : Dictionary = new Dictionary();
    
     public function getYamlConstructor(key : Object) : Function {
         return yamlConstructors[key] as Function;
@@ -46,17 +43,17 @@ public class BaseConstructor implements Constructor {
         return yamlMultiRegexps[key] as RegExp;
     }
 
-    public function getYamlMultiRegexps() : Map {
+    public function getYamlMultiRegexps() : Dictionary {
         return yamlMultiRegexps;
     }
 
-    public static function addConstructor(tag : String, ctor : Function) : void {
+    public function addConstructor(tag : String, ctor : Function) : void {
         yamlConstructors[tag] = ctor;
     }
 
-    public static function addMultiConstructor(tagPrefix : String, ctor : Function) : void {
+    public function addMultiConstructor(tagPrefix : String, ctor : Function) : void {
         yamlMultiConstructors[tagPrefix] = ctor;
-        yamlMultiRegexps.put(tagPrefix, new RegExp("^"+tagPrefix));
+        yamlMultiRegexps[tagPrefix] =  new RegExp("^"+tagPrefix);
     }
 
     private var composer : Composer;
@@ -82,14 +79,6 @@ public class BaseConstructor implements Constructor {
     }
 
     
-    public function eachDocument(ctor : Constructor) : Iterator {
-        return new DocumentIterator(ctor);
-    }
-
-    public function iterator() : Iterator {
-        return eachDocument(this);
-    }
-    
     public function constructDocument(node : Node) : Object {
         var data : Object = constructObject(node);
         constructedObjects = new Dictionary();
@@ -109,10 +98,9 @@ public class BaseConstructor implements Constructor {
         var ctor : Function = getYamlConstructor(node.getTag());
         if(ctor == null) {
             var through : Boolean = true;
-            var yamlMultiRegExps : Array = getYamlMultiRegexps().keySet().toArray();
             
-            for each(var tagPrefix : String in yamlMultiRegExps) {
-                var reg : RegExp = getYamlMultiRegexp(tagPrefix);
+            for (var tagPrefix : String in yamlMultiRegexps) {
+                var reg : RegExp = yamlMultiRegexps[tagPrefix];
                 if(reg.exec(node.getTag())) {
                     var tagSuffix : String = node.getTag().substring(tagPrefix.length);
                     ctor = getYamlMultiConstructor(tagPrefix);
@@ -148,7 +136,7 @@ public class BaseConstructor implements Constructor {
         } else if(node is MappingNode) {
             return constructMapping(node);
         } else {
-            new LogLogger('error').error(node.getTag());
+            trace("error", node.getTag());
         }
         return null;
     }
@@ -170,9 +158,9 @@ public class BaseConstructor implements Constructor {
 
     public function constructPrivateType(node : Node) : Object {
         var val : Object = null;
-        if(node.getValue() is Map) {
+        if(node.getValue() is Dictionary) {
             val = constructMapping(node);
-        } else if(node.getValue() is List) {
+        } else if(node.getValue() is Array) {
             val = constructSequence(node);
         } else if (node.getValue() is Dictionary) {
         	val = constructMapping(node);
@@ -187,7 +175,7 @@ public class BaseConstructor implements Constructor {
             throw new ConstructorException(null,"expected a sequence node, but found " + getQualifiedClassName(node),null);
         }
         var seq : Array = node.getValue() as Array;
-        var val : Array = new Array();
+        var val : Array = [];
         for each(var item:Node in seq) {
             val.push(constructObject(item));
         }
@@ -209,10 +197,10 @@ public class BaseConstructor implements Constructor {
                     throw new ConstructorException("while constructing a mapping", "found duplicate merge key",null);
                 }
                 if(value_v is MappingNode) {
-                    merge = new Array();
+                    merge = [];
                     merge.push(constructMapping(value_v));
                 } else if(value_v is SequenceNode) {
-                    merge = new Array();
+                    merge = [];
                     var vals : Array = value_v.getValue() as Array;
                     for each(var subnode : Node in vals) {
                         if(!(subnode is MappingNode)) {
@@ -248,7 +236,7 @@ public class BaseConstructor implements Constructor {
         if(!(node is MappingNode)) {
             throw new ConstructorException(null,"expected a mapping node, but found " + getQualifiedClassName(node), null);
         }
-        var value : Array = new Array();
+        var value : Array = [];
         var vals : Dictionary = node.getValue() as Dictionary;
         for (var key : Object in vals) {
             var val : Node = vals[key] as Node;
@@ -262,7 +250,7 @@ public class BaseConstructor implements Constructor {
         if(!(node is SequenceNode)) {
             throw new ConstructorException(null,"expected a sequence node, but found " + getQualifiedClassName(node), null);
         }
-        var value : Array = new Array();
+        var value : Array = [];
         var vals : Array = node.getValue() as Array;
 		var addedKeyValHash : Object = new Object();
 		
@@ -294,38 +282,21 @@ public class BaseConstructor implements Constructor {
     }
     
 
-    public static function CONSTRUCT_PRIMITIVE(self : Constructor, node : Node) : Object {
+    public function CONSTRUCT_PRIMITIVE(self : Constructor, node : Node) : Object {
                 return self.constructPrimitive(node);
             }
-    public static function CONSTRUCT_SCALAR(self : Constructor, node : Node) : Object {
+    public function CONSTRUCT_SCALAR(self : Constructor, node : Node) : Object {
                 return self.constructScalar(node);
             }
-    public static function CONSTRUCT_PRIVATE(self : Constructor, node : Node) : Object {
+    public function CONSTRUCT_PRIVATE(self : Constructor, node : Node) : Object {
                 return self.constructPrivateType(node);
             }
-    public static function CONSTRUCT_SEQUENCE(self : Constructor, node : Node) : Object {
+    public function CONSTRUCT_SEQUENCE(self : Constructor, node : Node) : Object {
                 return self.constructSequence(node);
             }
-    public static function CONSTRUCT_MAPPING(self : Constructor, node : Node) : Object {
+    public function CONSTRUCT_MAPPING(self : Constructor, node : Node) : Object {
                 return self.constructMapping(node);
             }
 }// BaseConstructorImpl
 }
 	
-	import org.as3yaml.Constructor;
-	import org.as3yaml.nodes.Node
-
-	import org.idmedia.as3commons.util.Iterator;	
-
-internal class DocumentIterator implements Iterator {
-	
-	private var _constructor : Constructor;
-	
-	public function DocumentIterator(ctor : Constructor) : void
-	{
-		_constructor = ctor;
-	}
-    public function hasNext() : Boolean {return _constructor.checkData();}
-    public function next() : * {return _constructor.getData();}
-    public function remove() : void {}
-}

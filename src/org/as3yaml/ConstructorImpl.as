@@ -24,14 +24,11 @@ package org.as3yaml {
 
     import flash.utils.Dictionary;
     
-    import org.idmedia.as3commons.util.HashMap;
-    import org.idmedia.as3commons.util.Map;;
-	
 	public class ConstructorImpl extends SafeConstructor 
 	{
 	    private static var yamlConstructors : Dictionary = new Dictionary();
 	    private static var yamlMultiConstructors : Dictionary = new Dictionary();
-	    private static var yamlMultiRegexps : HashMap = new HashMap();
+	    private static var yamlMultiRegexps : Dictionary = new Dictionary();
 	    
 	    override public function getYamlConstructor(key:Object) : Function {
 	  	
@@ -62,20 +59,23 @@ package org.as3yaml {
 	        return mine;
 	    }
 	
-	    override public function getYamlMultiRegexps() : Map {
-	        var all : Map = new HashMap();
-	        all.putAll(super.getYamlMultiRegexps());
-	        all.putAll(yamlMultiRegexps);
-	        return all;
+	    override public function getYamlMultiRegexps() : Dictionary {
+	    	var superMultiRegExps: Dictionary = super.getYamlMultiRegexps();
+	    	for (var key: String in superMultiRegExps)
+	    		yamlMultiRegexps[key] = superMultiRegExps[key];
+	    	
+	        return yamlMultiRegexps;
 	    }
 	
-	    public static function addConstructor(tag : String, ctor : YamlConstructor) : void {
-	        yamlConstructors.put(tag,ctor);
+	    override public function addConstructor(tag : String, ctor : YamlConstructor) : void {
+	    	super.addConstructor(tag, ctor);
+	        yamlConstructors[tag] = ctor;
 	    }
 	
-	    public static function addMultiConstructor(tagPrefix : String, ctor : YamlMultiConstructor) : void {
-	        yamlMultiConstructors.put(tagPrefix,ctor);
-	        yamlMultiRegexps.put(tagPrefix,new RegExp("^"+tagPrefix));
+	   override public function addMultiConstructor(tagPrefix : String, ctor : YamlMultiConstructor) : void {
+	    	super.addMultiConstructor(tagPrefix, ctor);
+	        yamlMultiConstructors[tagPrefix] = ctor;
+	        yamlMultiRegexps[tagPrefix] = new RegExp("^"+tagPrefix);
 	    }
 	
 	    public function ConstructorImpl( composer : Composer) {

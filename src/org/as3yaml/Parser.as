@@ -23,12 +23,11 @@
  
 package org.as3yaml {
 
+import flash.utils.Dictionary;
 import flash.utils.getQualifiedClassName;
 
 import org.as3yaml.events.*;
 import org.as3yaml.tokens.*;
-import org.idmedia.as3commons.util.*;
-import org.as3yaml.util.StringUtils;
 
 public class Parser {
     // Memnonics for the production table
@@ -88,14 +87,14 @@ public class Parser {
 
     private const P_TABLE : Array = [];
 
-    private var DEFAULT_TAGS_1_0 : Map = new HashMap();
-    private var DEFAULT_TAGS_1_1 : Map = new HashMap();
+    private var DEFAULT_TAGS_1_0 : Dictionary = new Dictionary();
+    private var DEFAULT_TAGS_1_1 : Dictionary = new Dictionary();
 	
 	private var ONLY_WORD : RegExp = new RegExp("^\\w+$");
 
     private var tags:Array;
     private var anchors:Array;
-    private var tagHandles:Map;
+    private var tagHandles:Dictionary;
     private var yamlVersion:Array;
     private var defaultYamlVersion:Array;
 
@@ -230,7 +229,7 @@ public class Parser {
 //                                }
 //                            }
 //                        } else {
-                            tag = (tagHandles.get(handle)) + suffix;
+                            tag = (tagHandles[handle]) + suffix;
 //                        }
                         
                     } else {
@@ -572,24 +571,29 @@ public class Parser {
             } else if(tok.getName() == ("TAG")) {
                 var handle : String = tok.getValue()[0];
                 var prefix : String = tok.getValue()[1];
-                if(tagHandles.containsKey(handle)) {
+                if(tagHandles[handle]) {
                     throw new ParserException(null,"duplicate tag handle " + handle,null);
                 }
-                tagHandles.put(handle,prefix);
+                tagHandles[handle] = prefix;
             }
         }
-        var value : Array = new Array();
+        var value : Array = [];
         value[0] = getFinalYamlVersion();
+		
 
-        if(!tagHandles.isEmpty()) {
-            value[1] = new HashMap().putAll(tagHandles);
+		var value1: Dictionary = new Dictionary();
+		var tagHandlesIsEmpty: Boolean = true;
+        for(var thKey : Object in tagHandles) {
+			value1[thKey] = tagHandles[thKey];
+			tagHandlesIsEmpty = false;
         }
+        
+        if (!tagHandlesIsEmpty) value[1] = value1;       
 
-        var baseTags : Map = value[0][1] == 0 ? DEFAULT_TAGS_1_0 : DEFAULT_TAGS_1_1;
-        for(var iter : Iterator = baseTags.keySet().iterator(); iter.hasNext();) {
-            var key : Object = iter.next();
-            if(!tagHandles.containsKey(key)) {
-                tagHandles.put(key,baseTags.get(key));
+        var baseTags : Dictionary = value[0][1] == 0 ? DEFAULT_TAGS_1_0 : DEFAULT_TAGS_1_1;
+        for(var btKey : Object in baseTags) {
+            if(!tagHandles[btKey]) {
+                tagHandles[btKey] = baseTags[btKey];
             }
         }
         return value;
@@ -600,16 +604,16 @@ public class Parser {
 
     public function Parser(scanner : Scanner, cfg : YAMLConfig) {
 
-        DEFAULT_TAGS_1_0.put("!","tag:yaml.org,2002:");
-		DEFAULT_TAGS_1_0.put("!!","");
+        DEFAULT_TAGS_1_0["!"] = "tag:yaml.org,2002:";
+		DEFAULT_TAGS_1_0["!!"] = "";
 
-        DEFAULT_TAGS_1_1.put("!","!");
-        DEFAULT_TAGS_1_1.put("!!","tag:yaml.org,2002:");        
+        DEFAULT_TAGS_1_1["!"] = "!";
+        DEFAULT_TAGS_1_1["!!"] = "tag:yaml.org,2002:";        
         
         this.scanner = scanner;
-        this.tags = new Array();
-        this.anchors = new Array();
-        this.tagHandles = new HashMap();
+        this.tags = [];
+        this.anchors = [];
+        this.tagHandles = new Dictionary();
         this.yamlVersion = null;
         this.defaultYamlVersion = [];
         this.defaultYamlVersion[0] = int(cfg.getVersion().substring(0,cfg.getVersion().indexOf('.')));
@@ -674,7 +678,7 @@ public class Parser {
 
     public function parseStream() : void {
         if(null == parseStack) {
-            this.parseStack = new Array();
+            this.parseStack = [];
             this.parseStack.push(P_STREAM);
         }
     }

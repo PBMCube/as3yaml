@@ -22,13 +22,12 @@
 package org.as3yaml{
 
 import org.as3yaml.nodes.Node;
-import org.idmedia.as3commons.util.Iterator;
 
 public interface Constructor {
     function checkData() : Boolean;
     function getData() : Object;
-    function eachDocument(ctor : Constructor) : Iterator;
-    function iterator() : Iterator;
+//    function eachDocument(ctor : Constructor) : Iterator;
+//    function iterator() : Iterator;
     function constructDocument(node : Node) : Object;
     //function constructfunction(node : Node) : Object;
     function constructPrimitive(node : Node) : Object;

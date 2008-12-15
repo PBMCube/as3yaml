@@ -51,9 +51,27 @@ public class Emitter {
     internal static const BLOCK_MAPPING_KEY : int = 16;
     internal static const FIRST_BLOCK_SEQUENCE_ITEM : int = 17;
     
+    public static var ESCAPE_REPLACEMENTS : Object = new Object();
+    
+    private function initEscapes():void {
+	    ESCAPE_REPLACEMENTS['\x00'] = "0";
+	    ESCAPE_REPLACEMENTS['\u0007'] = "a";
+	    ESCAPE_REPLACEMENTS['\u0008'] = "b";
+	    ESCAPE_REPLACEMENTS['\u0009'] = "t";
+	    ESCAPE_REPLACEMENTS['\n'] = "n";
+	    ESCAPE_REPLACEMENTS['\u000B'] = "v";
+	    ESCAPE_REPLACEMENTS['\u000C'] = "f";
+	    ESCAPE_REPLACEMENTS['\r'] = "r";
+	    ESCAPE_REPLACEMENTS['\u001B'] = "e";
+	    ESCAPE_REPLACEMENTS['"'] = "\"";
+	    ESCAPE_REPLACEMENTS['\\'] = "\\";
+	    ESCAPE_REPLACEMENTS['\u0085'] = "N";
+	    ESCAPE_REPLACEMENTS['\u00A0'] = "_";
+    }    
+    
     private static var STATES : Array = new Array();
     
-    static: {
+    private function initStates(): void {
         STATES[STREAM_START] = function expect(env : EmitterEnvironment) : void {
                     env.expectStreamStart();
                 };
@@ -145,6 +163,10 @@ public class Emitter {
     private var env : EmitterEnvironment;
 
     public function Emitter(stream : StringWriter, opts : YAMLConfig) {
+    	
+    	initEscapes();
+    	initStates();
+    	
         this.stream = stream;
         this.options = opts;
         this.env = new EmitterEnvironment();
@@ -205,7 +227,7 @@ public class Emitter {
 
         if(env.column < indent) {
             env.whitespace = true;
-            var data : String = new String();
+            var data : String = '';
             for(var i:int=0;i<(indent-env.column);i++) {
                 data += " ";
             }
@@ -243,8 +265,8 @@ public class Emitter {
                     start = ending;
                 }
                 if(ch != 0) {
-                    if(YAML.ESCAPE_REPLACEMENTS[ch]) {
-                        data = "\\" + YAML.ESCAPE_REPLACEMENTS[ch];
+                    if(ESCAPE_REPLACEMENTS[ch]) {
+                        data = "\\" + ESCAPE_REPLACEMENTS[ch];
                     } else if(ch <= '\u00FF') {
                         var str : String = new int(ch).toString(16);
                         if(str.length == 1) {
@@ -557,7 +579,7 @@ public class Emitter {
         if(prefix == null || "" == prefix) {
             throw new EmitterException("tag prefix must not be empty");
         }
-        var chunks : String = new String();
+        var chunks : String = '';
         var start:int=0,ending:int=0;
         if(prefix.charAt(0) == '!') {
             ending = 1;

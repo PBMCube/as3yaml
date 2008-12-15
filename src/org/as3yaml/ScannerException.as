@@ -34,7 +34,7 @@ public class ScannerException extends YAMLException {
     }
     
     override public function toString () : String {
-        var lines : String = new String();
+        var lines : String = '';
         if(this.when != null) {
            lines += this.when + "\\n"
         }
