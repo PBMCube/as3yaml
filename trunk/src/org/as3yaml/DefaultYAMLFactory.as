@@ -38,7 +38,7 @@ public class DefaultYAMLFactory implements YAMLFactory {
         return new Composer(parser,resolver);
     }
     public function createConstructor(composer : Composer) : Constructor {
-        return new ConstructorImpl(composer);
+        return new SafeConstructor(composer);
     }
     public function createEmitter(output : StringWriter, cfg : YAMLConfig) : Emitter {
         return new Emitter(output,cfg);

@@ -21,15 +21,14 @@
 
 package org.as3yaml.events {
 
-import org.idmedia.as3commons.util.Map;
-
+import flash.utils.Dictionary;
 
 public class DocumentStartEvent extends Event {
     private var explicit : Boolean;
     private var version : Array;
-    private var tags : Map;
+    private var tags : Dictionary;
 
-    public function DocumentStartEvent(explicit : Boolean, version : Array, tags : Map) {
+    public function DocumentStartEvent(explicit : Boolean, version : Array, tags : Dictionary) {
         this.explicit = explicit;
         this.version = version;
         this.tags = tags;
@@ -43,7 +42,7 @@ public class DocumentStartEvent extends Event {
         return version;
     }
 
-    public function getTags() : Map {
+    public function getTags() : Dictionary {
         return tags;
     }
 }

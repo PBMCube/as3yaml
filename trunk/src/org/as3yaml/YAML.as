@@ -38,30 +38,6 @@ import org.rxr.actionscript.io.*;
  * 
  */
 public class YAML {
-    public static const DEFAULT_SCALAR_TAG : String = "tag:yaml.org,2002:str";
-    public static const DEFAULT_SEQUENCE_TAG : String = "tag:yaml.org,2002:seq";
-    public static const DEFAULT_MAPPING_TAG : String = "tag:yaml.org,2002:map";
-
-    /**
-     * @private
-     */    
-    public static var ESCAPE_REPLACEMENTS : Object = new Object();
-    
-    static: {
-    ESCAPE_REPLACEMENTS['\x00'] = "0";
-    ESCAPE_REPLACEMENTS['\u0007'] = "a";
-    ESCAPE_REPLACEMENTS['\u0008'] = "b";
-    ESCAPE_REPLACEMENTS['\u0009'] = "t";
-    ESCAPE_REPLACEMENTS['\n'] = "n";
-    ESCAPE_REPLACEMENTS['\u000B'] = "v";
-    ESCAPE_REPLACEMENTS['\u000C'] = "f";
-    ESCAPE_REPLACEMENTS['\r'] = "r";
-    ESCAPE_REPLACEMENTS['\u001B'] = "e";
-    ESCAPE_REPLACEMENTS['"'] = "\"";
-    ESCAPE_REPLACEMENTS['\\'] = "\\";
-    ESCAPE_REPLACEMENTS['\u0085'] = "N";
-    ESCAPE_REPLACEMENTS['\u00A0'] = "_";
-    }
 	
 	/**
 	 * Takes an object and converts it to a YAML encoded string.

@@ -24,7 +24,6 @@
 package org.as3yaml {
 	import org.as3yaml.tokens.*;
 	import org.as3yaml.util.StringUtils;
-	import org.idmedia.as3commons.util.Iterator;
 	import org.rxr.actionscript.io.StringReader;
 
 	
@@ -101,9 +100,9 @@ public class Scanner {
     public function Scanner(stream : String) {
     	initEscapes();
         this.buffer = new StringReader(stream);
-        this.tokens = new Array();
-        this.indents = new Array();
-        this.possibleSimpleKeys = new Object();
+        this.tokens = [];
+        this.indents = [];
+        this.possibleSimpleKeys = {};
         checkPrintable(stream);
         buffer.writeChar('\x00');
         fetchStreamStart();
@@ -117,7 +116,7 @@ public class Scanner {
             if(choices.length == 0) {
                 return true;
             }
-           var first : Class = this.tokens.get(0) as Class;
+           var first : Class = this.tokens[0] as Class;
            var len: int = choices.length;
             for (var i : int = 0; i < len; i++) {
                 if(choices[i] is first) {
@@ -145,18 +144,6 @@ public class Scanner {
         return null;
     }
 
-    public function eachToken(scanner : Scanner) : Iterator  {
-        return new TokenIterator(scanner);
-    }
-
-    public function iterator(scanner : Scanner) : Iterator{
-        return eachToken(scanner);
-    }
-
-    private function peek(offset : int = 0) : String {
-        return buffer.peek(offset);
-    }
-
     private function prefix(length : int, offset: int = 0) : String {
         if(length > buffer.charsAvailable) {
             return buffer.peekRemaining()
@@ -166,29 +153,32 @@ public class Scanner {
     }
 
     private function prefixForward(length : int) : String {
-        var buff : String = null;
+        var buff : String;
         if(length > buffer.charsAvailable) {
-            buff = buffer.readRemaining()();
+            buff = buffer.readRemaining();
         } else {
             buff = buffer.readFor(length);
         }
-        var ch : String;
-        var j:int = buff.length;
-        for(var i:int=0; i<j; i++) {
-            ch = buff.charAt(i);
-            if(LINEBR.indexOf(ch) != -1 || (ch == '\r' && buff.charAt(i+1) != '\n')) {
-                this.column = 0;
-            } else if(ch != '\uFEFF') {
-                this.column++;
-            }
+        
+        var columnInc:int = 0;
+        
+        if (/(\n|\u0085|\u2028|\u2029|\r(?!\n))/.exec(buff))
+        {
+            this.column=0;        
         }
+        else
+        {
+        	columnInc = buff.replace(/\uFEFF/g, "").length;
+        }
+                
+        this.column+=columnInc;
         return buff;
     }
 
     private function forward(char: String=null) : void {
-        const ch1 : String =  char ? char : buffer.peek();
+        const ch1 : String =  char ? char : buffer.peekCache;
         buffer.forward();
-        if(ch1 == '\n' || ch1 == '\u0085' || (ch1 == '\r' && buffer.peek() != '\n')) {
+        if(ch1 == '\n' || ch1 == '\u0085' || (ch1 == '\r' && buffer.peekCache != '\n')) {
             this.column = 0;
         } else {
             this.column++;
@@ -196,16 +186,20 @@ public class Scanner {
     }
     
     private function forwardBy(length : int) : void {
-        var ch : String;
-        for(var i:int=0;i<length;i++) {
-            ch = buffer.read();
-            if(LINEBR.indexOf(ch) != -1 || (ch == '\r' && buffer.peek() != '\n')) {
-                this.possibleSimpleKeys = new Object();
-                this.column = 0;
-            } else if(ch != '\uFEFF') {
-                this.column++;
-            }
+        var buff: String = buffer.readFor(length);
+        var columnInc:int = 0;
+        
+        if (/(\n|\u0085|\u2028|\u2029|\r(?!\n))/.exec(buff))
+        {
+            this.possibleSimpleKeys = {};
+            this.column=0;        
         }
+        else
+        {
+        	columnInc = buff.replace(/\uFEFF/g, "").length;
+        }
+        
+        this.column+=columnInc;        
     }
 
     private function checkPrintable(data : String) : void {
@@ -228,7 +222,7 @@ public class Scanner {
     private function fetchMoreTokens() : Token {
         scanToNextToken();
         unwindIndent(this.column);
-        var ch : String =  buffer.peek();
+        var ch : String =  buffer.peekCache;
         var colz :Boolean = this.column == 0;
         switch(ch) {
         case ':': if(this.flowLevel != 0 || NULL_OR_OTHER.indexOf(buffer.peek(1)) != -1) { return fetchValue(); } break;	
@@ -443,14 +437,10 @@ public class Scanner {
         } else {
             delete this.possibleSimpleKeys[this.flowLevel];
             var sIndex: int = key.tokenNumber-this.tokensTaken;
-		    var s:Array = tokens.slice(0, sIndex);
-		    var e:Array = tokens.slice(sIndex);
-		    tokens = s.concat(Tokens.KEY).concat(e);
+		    tokens.splice(sIndex, 0, Tokens.KEY);
             if(this.flowLevel == 0 && addIndent(key.getColumn())) {
 	            var sIndex2: int = key.tokenNumber-this.tokensTaken;
-			    var s2:Array = tokens.slice(0, sIndex2);
-			    var e2:Array = tokens.slice(sIndex2);
-			    tokens = s2.concat(Tokens.BLOCK_MAPPING_START).concat(e2);
+			    tokens.splice(sIndex2, 0, Tokens.BLOCK_MAPPING_START);
             }
             this.allowSimpleKey = false;
         }
@@ -527,13 +517,13 @@ public class Scanner {
     private function scanToNextToken() : void {
         while(1) {
         	
-			var pk : String = buffer.peek();
+			var pk : String = buffer.peekCache;
             while(pk == ' ') {
                 forward(pk);
-                pk = buffer.peek();
+                pk = buffer.peekCache;
             }			
             if(pk == '#') {
-                while(NULL_OR_LINEBR.indexOf(buffer.peek()) == -1) {
+                while(NULL_OR_LINEBR.indexOf(buffer.peekCache) == -1) {
                     forward();
                 }
             }
@@ -556,7 +546,7 @@ public class Scanner {
         } else if(name == ("TAG")) {
             value = scanTagDirectiveValue();
         } else {
-            while(NULL_OR_LINEBR.indexOf(buffer.peek()) == -1) {
+            while(NULL_OR_LINEBR.indexOf(buffer.peekCache) == -1) {
                 forward();
             }
         }
@@ -578,30 +568,30 @@ public class Scanner {
         }
         var value : String = prefixForward(length);
         //        forward(length);
-        if(NULL_BL_LINEBR.indexOf(buffer.peek()) == -1) {
+        if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
             throw new ScannerException("while scanning a directive","expected alphabetic or numeric character, but found " + ch + "(" + (ch) + ")",null);
         }
         return value;
     }
 
     private function scanYamlDirectiveValue() : Array {
-        while(buffer.peek() == ' ') {
+        while(buffer.peekCache == ' ') {
             forward();
         }
         var major : String = scanYamlDirectiveNumber();
-        if(buffer.peek() != '.') {
-            throw new ScannerException("while scanning a directive","expected a digit or '.', but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(buffer.peekCache != '.') {
+            throw new ScannerException("while scanning a directive","expected a digit or '.', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         forward();
         var minor : String = scanYamlDirectiveNumber();
-        if(NULL_BL_LINEBR.indexOf(buffer.peek()) == -1) {
-            throw new ScannerException("while scanning a directive","expected a digit or ' ', but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
+            throw new ScannerException("while scanning a directive","expected a digit or ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         return [major,minor];
     }
 
     private function scanYamlDirectiveNumber() : String {
-        var ch : String = buffer.peek();
+        var ch : String = buffer.peekCache;
         if(!StringUtils.isDigit(ch)) {
             throw new ScannerException("while scanning a directive","expected a digit, but found " + ch + "(" + (ch) + ")",null);
         }
@@ -615,11 +605,11 @@ public class Scanner {
     }
 
     private function scanTagDirectiveValue() : Array  {
-        while(buffer.peek() == ' ') {
+        while(buffer.peekCache == ' ') {
             forward();
         }
         var handle : String = scanTagDirectiveHandle();
-        while(buffer.peek() == ' ') {
+        while(buffer.peekCache == ' ') {
             forward();
         }
         var prefix : String = scanTagDirectivePrefix();
@@ -628,38 +618,38 @@ public class Scanner {
 
     private function scanTagDirectiveHandle() : String {
         var value : String = scanTagHandle("directive");
-        if(buffer.peek() != ' ') {
-            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(buffer.peekCache != ' ') {
+            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         return value;
     }
     
     private function scanTagDirectivePrefix() : String {
         var value : String = scanTagUri("directive");
-        if(NULL_BL_LINEBR.indexOf(buffer.peek()) == -1) {
-            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
+            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         return value;
     }
 
     private function scanDirectiveIgnoredLine() : String {
-        while(buffer.peek() == ' ') {
+        while(buffer.peekCache == ' ') {
             forward();
         }
-        if(buffer.peek() == '"') {
-            while(NULL_OR_LINEBR.indexOf(buffer.peek()) == -1) {
+        if(buffer.peekCache == '"') {
+            while(NULL_OR_LINEBR.indexOf(buffer.peekCache) == -1) {
                 forward();
             }
         }
-        var ch : String = buffer.peek();
+        var ch : String = buffer.peekCache;
         if(NULL_OR_LINEBR.indexOf(ch) == -1) {
-            throw new ScannerException("while scanning a directive","expected a comment or a line break, but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+            throw new ScannerException("while scanning a directive","expected a comment or a line break, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         return scanLineBreak();
     }
 
     private function scanAnchor(tok : Token) : Token {
-        var indicator : String = buffer.peek();
+        var indicator : String = buffer.peekCache;
         var name : String = indicator == '*' ? "alias" : "anchor";
         forward();
         var length : int = 0;
@@ -678,8 +668,8 @@ public class Scanner {
         }
         var value : String = prefixForward(length);
         //        forward(length);
-        if(NON_ALPHA_OR_NUM.indexOf(buffer.peek()) == -1) {
-            throw new ScannerException("while scanning an " + name,"expected alphabetic or numeric character, but found "+ buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(NON_ALPHA_OR_NUM.indexOf(buffer.peekCache) == -1) {
+            throw new ScannerException("while scanning an " + name,"expected alphabetic or numeric character, but found "+ buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
 
         }
         tok.setValue(value);
@@ -693,8 +683,8 @@ public class Scanner {
         if(ch == '<') {
             forwardBy(2);
             suffix = scanTagUri("tag");
-            if(buffer.peek() != '>') {
-                throw new ScannerException("while scanning a tag","expected '>', but found "+ buffer.peek() + "(" + (buffer.peek()) + ")",null);
+            if(buffer.peekCache != '>') {
+                throw new ScannerException("while scanning a tag","expected '>', but found "+ buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
             }
             forward();
         } else if(NULL_BL_T_LINEBR.indexOf(ch) != -1) {
@@ -720,19 +710,19 @@ public class Scanner {
             }
             suffix = scanTagUri("tag");
         }
-        if(NULL_BL_LINEBR.indexOf(buffer.peek()) == -1) {
-            throw new ScannerException("while scanning a tag","expected ' ', but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
+            throw new ScannerException("while scanning a tag","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         return new TagToken([handle,suffix]);
     }
 
     private function scanBlockScalar(style : String) : ScalarToken {
         var folded : Boolean = style == '>';
-        var chunks : String = new String();
+        var chunks : String = '';
         forward();
         var chompi : Array = scanBlockScalarIndicators();
         var chomping : Boolean = Boolean(chompi[0])
-        var increment : int = (int(chompi[1]));
+        var increment : int = (chompi[1] as int);
         scanBlockScalarIgnoredLine();
         var minIndent : int = this.indent+1;
         if(minIndent < 1) {
@@ -754,7 +744,7 @@ public class Scanner {
             ind = minIndent + increment - 1;
             breaks = scanBlockScalarBreaks(ind);
         }
-		var pk :String = buffer.peek();
+		var pk :String = buffer.peekCache;
         var lineBreak : String = "";
         while(this.column == ind && pk != '\x00') {
             chunks += breaks;
@@ -767,7 +757,7 @@ public class Scanner {
             //            forward(length);
             lineBreak = scanLineBreak();
             breaks = scanBlockScalarBreaks(ind);
-            pk = buffer.peek();
+            pk = buffer.peekCache;
             if(this.column == ind && pk != '\x00') {
                 if(folded && lineBreak == ("\n") && leadingNonSpace && BLANK_T.indexOf(pk) == -1) {
                     if(breaks.length == 0) {
@@ -792,11 +782,11 @@ public class Scanner {
     private function scanBlockScalarIndicators() : Array {
         var chomping : Boolean = false;
         var increment : int = -1;
-        var ch : String = buffer.peek();
+        var ch : String = buffer.peekCache;
         if(ch == '-' || ch == '+') {
             chomping = ch == '+';
             forward(ch);
-            ch = buffer.peek();
+            ch = buffer.peekCache;
             if(StringUtils.isDigit(ch)) {
                 increment = int(ch);
                 if(increment == 0) {
@@ -810,38 +800,38 @@ public class Scanner {
                 throw new ScannerException("while scanning a block scalar","expected indentation indicator in the range 1-9, but found 0",null);
             }
             forward();
-            ch = buffer.peek();
+            ch = buffer.peekCache;
             if(ch == '-' || ch == '+') {
                 chomping = ch == '+';
                 forward();
             }
         }
-        if(NULL_BL_LINEBR.indexOf(buffer.peek()) == -1) {
-            throw new ScannerException("while scanning a block scalar","expected chomping or indentation indicators, but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
+            throw new ScannerException("while scanning a block scalar","expected chomping or indentation indicators, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         return [chomping, increment];
 }
 
     private function scanBlockScalarIgnoredLine() : String {
-        while(buffer.peek() == ' ') {
+        while(buffer.peekCache == ' ') {
             forward();
         }
-        if(buffer.peek() == '#') {
-            while(NULL_OR_LINEBR.indexOf(buffer.peek()) == -1) {
+        if(buffer.peekCache == '#') {
+            while(NULL_OR_LINEBR.indexOf(buffer.peekCache) == -1) {
                 forward();
             }
         }
-        if(NULL_OR_LINEBR.indexOf(buffer.peek()) == -1) {
-            throw new ScannerException("while scanning a block scalar","expected a comment or a line break, but found " + buffer.peek() + "(" + (buffer.peek()) + ")",null);
+        if(NULL_OR_LINEBR.indexOf(buffer.peekCache) == -1) {
+            throw new ScannerException("while scanning a block scalar","expected a comment or a line break, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
         }
         return scanLineBreak();
     }
 
     private function scanBlockScalarIndentation() : Array {
-        var chunks : String = new String();
+        var chunks : String = '';
         var maxIndent : int = 0;
-        while(BLANK_OR_LINEBR.indexOf(buffer.peek()) != -1) {
-            if(buffer.peek() != ' ') {
+        while(BLANK_OR_LINEBR.indexOf(buffer.peekCache) != -1) {
+            if(buffer.peekCache != ' ') {
                 chunks += scanLineBreak();
             } else {
                 forward();
@@ -854,13 +844,13 @@ public class Scanner {
     }
 
     private function scanBlockScalarBreaks(indent : int) : String {
-        var chunks : String = new String();
-        while(this.column < indent && buffer.peek() == ' ') {
+        var chunks : String = '';
+        while(this.column < indent && buffer.peekCache == ' ') {
             forward();
         }
-        while(FULL_LINEBR.indexOf(buffer.peek()) != -1) {
+        while(FULL_LINEBR.indexOf(buffer.peekCache) != -1) {
             chunks += scanLineBreak();
-            while(this.column < indent && buffer.peek() == ' ') {
+            while(this.column < indent && buffer.peekCache == ' ') {
                 forward();
             }
         }
@@ -869,11 +859,11 @@ public class Scanner {
 
     private function scanFlowScalar(style : String) : Token {
         var dbl : Boolean = style == '"';
-        var chunks : String = new String();
-        var quote : String = buffer.peek();
+        var chunks : String = '';
+        var quote : String = buffer.peekCache;
         forward();
         chunks += scanFlowScalarNonSpaces(dbl);
-        while(buffer.peek() != quote) {
+        while(buffer.peekCache != quote) {
             chunks += scanFlowScalarSpaces();
             chunks += scanFlowScalarNonSpaces(dbl);
         }
@@ -883,7 +873,7 @@ public class Scanner {
     }
 
     private function scanFlowScalarNonSpaces(dbl : Boolean) : String {
-        var chunks : String = new String();
+        var chunks : String = '';
         while(1) {
             var length : int = 0;
             while(SPACES_AND_STUFF.indexOf(buffer.peek(length)) == -1) {
@@ -893,7 +883,7 @@ public class Scanner {
                 chunks += (prefixForward(length));
                 //                forward(length);
             }
-            var ch : String = buffer.peek();
+            var ch : String = buffer.peekCache;
             if(!dbl && ch == '\'' && buffer.peek(1) == '\'') {
                 chunks += ("'");
                 forwardBy(2);
@@ -902,7 +892,7 @@ public class Scanner {
                 forward();
             } else if(dbl && ch == '\\') {
                 forward();
-                ch = buffer.peek();
+                ch = buffer.peekCache;
                 if(ESCAPE_REPLACEMENTS[ch]) {
                     chunks += ESCAPE_REPLACEMENTS[ch];
                     forward(); 
@@ -931,14 +921,14 @@ public class Scanner {
     }
 
     private function scanFlowScalarSpaces() : String {
-        var chunks : String = new String();
+        var chunks : String = '';
         var length : int = 1;
         while(BLANK_T.indexOf(buffer.peek(length)) != -1) {
             length++;
         }
         var whitespaces : String = prefixForward(length);
         //        forward(length);
-        var ch : String = buffer.peek();
+        var ch : String = buffer.peekCache;
         if(ch == '\x00') {
             throw new ScannerException("while scanning a quoted scalar","found unexpected end of stream",null);
         } else if(FULL_LINEBR.indexOf(ch) != -1) {
@@ -964,10 +954,10 @@ public class Scanner {
             if((pre == ("---") || pre == ("...")) && NULL_BL_T_LINEBR.indexOf(buffer.peek(3)) != -1) {
                 throw new ScannerException("while scanning a quoted scalar","found unexpected document separator",null);
             }
-            while(BLANK_T.indexOf(buffer.peek()) != -1) {
+            while(BLANK_T.indexOf(buffer.peekCache) != -1) {
                 forward();
             }
-            if(FULL_LINEBR.indexOf(buffer.peek()) != -1) {
+            if(FULL_LINEBR.indexOf(buffer.peekCache) != -1) {
                 chunks += scanLineBreak();
             } else {
                 return chunks;
@@ -987,7 +977,7 @@ public class Scanner {
          */
         
         
-        var chunks : String = new String();
+        var chunks : String = '';
         var ind : int = this.indent+1;
         var spaces : String = "";
         var f_nzero : Boolean = true;
@@ -996,7 +986,7 @@ public class Scanner {
             f_nzero = false;
             r_check = R_FLOWZERO;
         }
-        while(buffer.peek() != '#') {
+        while(buffer.peekCache != '#') {
         	
             var chunkSize : int = 256;
             var startAt: int = 0;
@@ -1030,14 +1020,14 @@ public class Scanner {
     }
 
     private function scanPlainSpaces(indent : int) : String {
-        var chunks : String = new String();
+        var chunks : String = '';
         var length : int = 0;
         while(buffer.peek(length) == ' ') {
             length++;
         }
         var whitespaces : String = prefixForward(length);
         //        forward(length);
-        var ch : String  = buffer.peek();
+        var ch : String  = buffer.peekCache;
         if(FULL_LINEBR.indexOf(ch) != -1) {
             var lineBreak : String = scanLineBreak();
             this.allowSimpleKey = true;
@@ -1045,8 +1035,8 @@ public class Scanner {
                 return "";
             }
             var breaks : String = new String();
-            while(BLANK_OR_LINEBR.indexOf(buffer.peek()) != -1) {
-                if(' ' == buffer.peek()) {
+            while(BLANK_OR_LINEBR.indexOf(buffer.peekCache) != -1) {
+                if(' ' == buffer.peekCache) {
                     forward();
                 } else {
                     breaks += scanLineBreak();
@@ -1057,7 +1047,7 @@ public class Scanner {
             }            
             if(!lineBreak == ("\n")) {
                 chunks += lineBreak;
-            } else if(breaks == null || breaks.toString() == ("")) {
+            } else if(breaks == null || breaks == "") {
                 chunks += " ";
             }
             chunks += breaks;
@@ -1068,7 +1058,7 @@ public class Scanner {
     }
 
     private function scanTagHandle(name : String) : String {
-        var ch : String =  buffer.peek();
+        var ch : String =  buffer.peekCache;
         if(ch != '!') {
             throw new ScannerException("while scanning a " + name,"expected '!', but found " + ch + "(" + (ch) + ")",null);
         }
@@ -1091,7 +1081,7 @@ public class Scanner {
     }
 
     private function scanTagUri(name : String) : String {
-        var chunks : String = new String();
+        var chunks : String = "";
         var length : int = 0;
         var ch : String = buffer.peek(length);
         while(STRANGE_CHAR.indexOf(ch) != -1) {
@@ -1115,8 +1105,8 @@ public class Scanner {
     }
 
     private function scanUriEscapes(name : String) : String {
-        var bytes : String = new String();
-        while(buffer.peek() == '%') {
+        var bytes : String = '';
+        while(buffer.peekCache == '%') {
             forward();
             try {
                 bytes += int(prefix(2)).toString(16);
@@ -1135,7 +1125,7 @@ public class Scanner {
         //   '\n'        :   '\n'
         //   '\x85'      :   '\n'
         //   default     :   ''
-        var val : String = buffer.peek();
+        var val : String = buffer.peekCache;
         if(FULL_LINEBR.indexOf(val) != -1) {
             if(RN == (prefix(2))) {
                 forwardBy(2);
@@ -1149,28 +1139,4 @@ public class Scanner {
     }
 
 }
-}
-
-import org.idmedia.as3commons.util.Iterator;
-import org.as3yaml.Scanner;
-	
-internal class TokenIterator implements Iterator {
-	
-	private var scanner : Scanner;
-	
-	public function TokenIterator(scanner : Scanner) : void
-	{
-		this.scanner = scanner;
-	}
-	
-    public function hasNext() : Boolean {
-        return null != scanner.peekToken();
-    }
-
-    public function next() : * {
-        return scanner.getToken();
-    }
-
-    public function remove() : void {
-    }
 }
