@@ -1,9 +1,0 @@
-# ordered maps are represented as
-# a sequence of mappings, with
-# each mapping having one key
-# duplicates are not allowed
---- !!omap
-- Mark McGwire: 65
-- Sammy Sosa: 63
-- Ken Griffy: 58
-- Ken Griffy: 58
