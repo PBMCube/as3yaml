@@ -1,0 +1,42 @@
+--- !actionscript/object:com.vo.PublisherVO
+app_dictionary_id: !!float 1
+dont_care: !!float 0
+id: 5D9B835F-122D-4C20-B07A-CD8F4BEBA217
+name: Nullsoft
+software_titles: 
+  - !actionscript/object:com.vo.SoftwareTitleVO
+    app_dictionary_id: !!float 1
+    dont_care: !!float 0
+    id: CE8EFCEA-E627-4E1B-AF5B-92D8B288BEC9
+    name: NSCopy
+    publisher: !!null
+    publisher_id: 5D9B835F-122D-4C20-B07A-CD8F4BEBA217
+    software_title_versions: !!null
+    statistics: !!null
+  - !actionscript/object:com.vo.SoftwareTitleVO
+    app_dictionary_id: !!float 1
+    dont_care: !!float 0
+    id: 89BF1CA8-11EF-48A2-8EEA-8C1361859C88
+    name: NSIS
+    publisher: !!null
+    publisher_id: 5D9B835F-122D-4C20-B07A-CD8F4BEBA217
+    software_title_versions: !!null
+    statistics: !!null
+  - !actionscript/object:com.vo.SoftwareTitleVO
+    app_dictionary_id: !!float 2
+    dont_care: !!float 0
+    id: 466820BD-C50E-4882-8E0D-D55C041DE668
+    name: Nullsoft Winamp
+    publisher: !!null
+    publisher_id: 5D9B835F-122D-4C20-B07A-CD8F4BEBA217
+    software_title_versions: !!null
+    statistics: !!null
+  - !actionscript/object:com.vo.SoftwareTitleVO
+    app_dictionary_id: !!float 1
+    dont_care: !!float 0
+    id: 41682986-299A-474F-88C4-F7FC518813AF
+    name: Winamp
+    publisher: !!null
+    publisher_id: 5D9B835F-122D-4C20-B07A-CD8F4BEBA217
+    software_title_versions: !!null
+    statistics: !!null

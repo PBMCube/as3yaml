@@ -1,0 +1,14 @@
+---
+Foos:
+  - {id: 4, name: '3004359204'}
+  - {id: 4, name: '3004359038'}
+  - {id: 4, name: '3004359912'}
+  
+stages:
+  - { code: Ex, label: Experimental, tl: -3, qrebs: -5, mod: -4, oc: 50, tons add: 3, cost mult: 10 }
+  - { code: Pr, label: Prototype,    tl: -2, qrebs: -3, mod: -3, oc: 80, tons add: 2, cost mult: 3  }
+  - { code: Er, label: Early,        tl: -1, qrebs: -1, mod: 0,  oc: 90, cost mult: 2 }
+  - { code: St, label: Standard,     oc: 100 }
+  - { code: Im, label: Improved,     tl: 1, qrebs: 1, oc: 110, cost mult: 0.5 }
+  - { code: Ad, label: Advanced,     tl: 2, qrebs: 3, oc: 120, cost mult: 0.5 }  
+
