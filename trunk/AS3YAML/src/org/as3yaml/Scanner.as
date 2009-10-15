@@ -87,6 +87,7 @@ public class Scanner {
     private var flowLevel : int = 0;
     private var tokensTaken : int = 0;
     private var indent : int = -1;
+    public static var lineNumber:int = 1;
     private var allowSimpleKey : Boolean = true;
     private var eof : Boolean = true;
     private var column : int = 0;
@@ -103,6 +104,7 @@ public class Scanner {
         this.tokens = [];
         this.indents = [];
         this.possibleSimpleKeys = {};
+		lineNumber = 1;
         checkPrintable(stream);
         buffer.writeChar('\x00');
         fetchStreamStart();
@@ -143,6 +145,24 @@ public class Scanner {
         }
         return null;
     }
+	
+	public function productionLineNumber():int
+	{
+		var lineNumber: int = 1;
+		
+		for (var i:int = 0, j:int = tokens.length; i<j; i++)
+		{
+			var token: Token = tokens[i];
+			
+			if (token.lineNumber > 1)
+			{
+				lineNumber = token.lineNumber;
+				break;
+			}
+		}
+			
+		return lineNumber;		
+	}
 
     private function prefix(length : int, offset: int = 0) : String {
         if(length > buffer.charsAvailable) {
@@ -179,6 +199,7 @@ public class Scanner {
         const ch1 : String =  char ? char : buffer.peekCache;
         buffer.forward();
         if(ch1 == '\n' || ch1 == '\u0085' || (ch1 == '\r' && buffer.peekCache != '\n')) {
+        	this.possibleSimpleKeys = {};
             this.column = 0;
         } else {
             this.column++;
@@ -257,7 +278,7 @@ public class Scanner {
         if(BEG.exec(prefix(2))) {
             return fetchPlain();
         }
-        throw new ScannerException("while scanning for the next token","found character " + ch + "(" + (ch) + " that cannot start any token",null);
+        throw new ScannerException("while scanning for the next token","found character " + ch + "(" + (ch) + " that cannot start any token", "line number: " + lineNumber );
     }
 
     private function nextPossibleSimpleKey() : int {
@@ -276,7 +297,7 @@ public class Scanner {
         if(key != null) {
         	delete this.possibleSimpleKeys[this.flowLevel];
             if(key.isRequired()) {
-                throw new ScannerException("while scanning a simple key","could not find expected ':'",null);
+                throw new ScannerException("while scanning a simple key","could not find expected ':'", "line number: " + lineNumber );
             }
         }
     }
@@ -395,7 +416,7 @@ public class Scanner {
 
         if(this.flowLevel == 0) {
             if(!this.allowSimpleKey) {
-                throw new ScannerException(null,"sequence entries are not allowed here",null);
+                throw new ScannerException(null,"sequence entries are not allowed here", "line number: " + lineNumber );
             }
             if(addIndent(this.column)) {
                 this.tokens.push(Tokens.BLOCK_SEQUENCE_START);
@@ -412,7 +433,7 @@ public class Scanner {
     private function fetchKey() : Token {
         if(this.flowLevel == 0) {
             if(!this.allowSimpleKey) {
-                throw new ScannerException(null,"mapping keys are not allowed here",null);
+                throw new ScannerException(null,"mapping keys are not allowed here", "line number: " + lineNumber );
             }
             if(addIndent(this.column)) {
                 this.tokens.push(Tokens.BLOCK_MAPPING_START);
@@ -430,7 +451,7 @@ public class Scanner {
         var key : SimpleKey = this.possibleSimpleKeys[this.flowLevel];
         if(null == key) {
             if(this.flowLevel == 0 && !this.allowSimpleKey) {
-                throw new ScannerException(null,"mapping values are not allowed here",null);
+                throw new ScannerException(null,"mapping values are not allowed here", "line number: " + lineNumber );
             }
             this.allowSimpleKey = (this.flowLevel == 0);
             removePossibleSimpleKey();
@@ -564,12 +585,12 @@ public class Scanner {
             ch = buffer.peek(length);
         }
         if(zlen) {
-            throw new ScannerException("while scanning a directive","expected alphabetic or numeric character, but found " + ch + "(" + (ch) + ")",null);
+            throw new ScannerException("while scanning a directive","expected alphabetic or numeric character, but found " + ch + "(" + (ch) + ")", "line number: " + lineNumber );
         }
         var value : String = prefixForward(length);
         //        forward(length);
         if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
-            throw new ScannerException("while scanning a directive","expected alphabetic or numeric character, but found " + ch + "(" + (ch) + ")",null);
+            throw new ScannerException("while scanning a directive","expected alphabetic or numeric character, but found " + ch + "(" + (ch) + ")", "line number: " + lineNumber );
         }
         return value;
     }
@@ -580,12 +601,12 @@ public class Scanner {
         }
         var major : String = scanYamlDirectiveNumber();
         if(buffer.peekCache != '.') {
-            throw new ScannerException("while scanning a directive","expected a digit or '.', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a directive","expected a digit or '.', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         forward();
         var minor : String = scanYamlDirectiveNumber();
         if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
-            throw new ScannerException("while scanning a directive","expected a digit or ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a directive","expected a digit or ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         return [major,minor];
     }
@@ -593,7 +614,7 @@ public class Scanner {
     private function scanYamlDirectiveNumber() : String {
         var ch : String = buffer.peekCache;
         if(!StringUtils.isDigit(ch)) {
-            throw new ScannerException("while scanning a directive","expected a digit, but found " + ch + "(" + (ch) + ")",null);
+            throw new ScannerException("while scanning a directive","expected a digit, but found " + ch + "(" + (ch) + ")", "line number: " + lineNumber );
         }
         var length : int = 0;
         while(StringUtils.isDigit(buffer.peek(length))) {
@@ -619,7 +640,7 @@ public class Scanner {
     private function scanTagDirectiveHandle() : String {
         var value : String = scanTagHandle("directive");
         if(buffer.peekCache != ' ') {
-            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         return value;
     }
@@ -627,7 +648,7 @@ public class Scanner {
     private function scanTagDirectivePrefix() : String {
         var value : String = scanTagUri("directive");
         if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
-            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a directive","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         return value;
     }
@@ -643,7 +664,7 @@ public class Scanner {
         }
         var ch : String = buffer.peekCache;
         if(NULL_OR_LINEBR.indexOf(ch) == -1) {
-            throw new ScannerException("while scanning a directive","expected a comment or a line break, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a directive","expected a comment or a line break, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         return scanLineBreak();
     }
@@ -664,12 +685,12 @@ public class Scanner {
         }
         length = match.index;
         if(length == 0) {
-            throw new ScannerException("while scanning an " + name,"expected alphabetic or numeric character, but found something else...",null);
+            throw new ScannerException("while scanning an " + name,"expected alphabetic or numeric character, but found something else...", "line number: " + lineNumber );
         }
         var value : String = prefixForward(length);
         //        forward(length);
         if(NON_ALPHA_OR_NUM.indexOf(buffer.peekCache) == -1) {
-            throw new ScannerException("while scanning an " + name,"expected alphabetic or numeric character, but found "+ buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning an " + name,"expected alphabetic or numeric character, but found "+ buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
 
         }
         tok.setValue(value);
@@ -684,7 +705,7 @@ public class Scanner {
             forwardBy(2);
             suffix = scanTagUri("tag");
             if(buffer.peekCache != '>') {
-                throw new ScannerException("while scanning a tag","expected '>', but found "+ buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+                throw new ScannerException("while scanning a tag","expected '>', but found "+ buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
             }
             forward();
         } else if(NULL_BL_T_LINEBR.indexOf(ch) != -1) {
@@ -711,7 +732,7 @@ public class Scanner {
             suffix = scanTagUri("tag");
         }
         if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
-            throw new ScannerException("while scanning a tag","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a tag","expected ' ', but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         return new TagToken([handle,suffix]);
     }
@@ -790,14 +811,14 @@ public class Scanner {
             if(StringUtils.isDigit(ch)) {
                 increment = int(ch);
                 if(increment == 0) {
-                    throw new ScannerException("while scanning a block scalar","expected indentation indicator in the range 1-9, but found 0",null);
+                    throw new ScannerException("while scanning a block scalar","expected indentation indicator in the range 1-9, but found 0", "line number: " + lineNumber );
                 }
                 forward(ch);
             }
         } else if(StringUtils.isDigit(ch)) {
             increment = int(ch);
             if(increment == 0) {
-                throw new ScannerException("while scanning a block scalar","expected indentation indicator in the range 1-9, but found 0",null);
+                throw new ScannerException("while scanning a block scalar","expected indentation indicator in the range 1-9, but found 0", "line number: " + lineNumber );
             }
             forward();
             ch = buffer.peekCache;
@@ -807,7 +828,7 @@ public class Scanner {
             }
         }
         if(NULL_BL_LINEBR.indexOf(buffer.peekCache) == -1) {
-            throw new ScannerException("while scanning a block scalar","expected chomping or indentation indicators, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a block scalar","expected chomping or indentation indicators, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         return [chomping, increment];
 }
@@ -822,7 +843,7 @@ public class Scanner {
             }
         }
         if(NULL_OR_LINEBR.indexOf(buffer.peekCache) == -1) {
-            throw new ScannerException("while scanning a block scalar","expected a comment or a line break, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")",null);
+            throw new ScannerException("while scanning a block scalar","expected a comment or a line break, but found " + buffer.peekCache + "(" + (buffer.peekCache) + ")", "line number: " + lineNumber );
         }
         return scanLineBreak();
     }
@@ -901,7 +922,7 @@ public class Scanner {
                     forward();
                     var val : String = prefix(length);
                     if(NOT_HEXA.exec(val)) {
-                        throw new ScannerException("while scanning a double-quoted scalar","expected escape sequence of " + length + " hexadecimal numbers, but found something else: " + val,null);
+                        throw new ScannerException("while scanning a double-quoted scalar","expected escape sequence of " + length + " hexadecimal numbers, but found something else: " + val, "line number: " + lineNumber );
                     }
                     var charCode : int = parseInt(val, 16);
                     var char : String = String.fromCharCode(charCode);
@@ -911,7 +932,7 @@ public class Scanner {
                     scanLineBreak();
                     chunks += scanFlowScalarBreaks();
                 } else {
-                    throw new ScannerException("while scanning a double-quoted scalar","found unknown escape character " + ch + "(" + (ch) + ")",null);
+                    throw new ScannerException("while scanning a double-quoted scalar","found unknown escape character " + ch + "(" + (ch) + ")", "line number: " + lineNumber );
                 }
             } else {
                 return chunks;
@@ -930,7 +951,7 @@ public class Scanner {
         //        forward(length);
         var ch : String = buffer.peekCache;
         if(ch == '\x00') {
-            throw new ScannerException("while scanning a quoted scalar","found unexpected end of stream",null);
+            throw new ScannerException("while scanning a quoted scalar","found unexpected end of stream", "line number: " + lineNumber );
         } else if(FULL_LINEBR.indexOf(ch) != -1) {
             var lineBreak : String = scanLineBreak();
             var breaks : String = scanFlowScalarBreaks();
@@ -952,7 +973,7 @@ public class Scanner {
         while(1) {
             pre = prefix(3);
             if((pre == ("---") || pre == ("...")) && NULL_BL_T_LINEBR.indexOf(buffer.peek(3)) != -1) {
-                throw new ScannerException("while scanning a quoted scalar","found unexpected document separator",null);
+                throw new ScannerException("while scanning a quoted scalar","found unexpected document separator", "line number: " + lineNumber );
             }
             while(BLANK_T.indexOf(buffer.peekCache) != -1) {
                 forward();
@@ -1060,7 +1081,7 @@ public class Scanner {
     private function scanTagHandle(name : String) : String {
         var ch : String =  buffer.peekCache;
         if(ch != '!') {
-            throw new ScannerException("while scanning a " + name,"expected '!', but found " + ch + "(" + (ch) + ")",null);
+            throw new ScannerException("while scanning a " + name,"expected '!', but found " + ch + "(" + (ch) + ")", "line number: " + lineNumber );
         }
         var length : int = 1;
         ch = buffer.peek(length);
@@ -1071,7 +1092,7 @@ public class Scanner {
             }
             if('!' != ch) {
                 forwardBy(length);
-                throw new ScannerException("while scanning a " + name,"expected '!', but found " + ch + "(" + (ch) + ")",null);
+                throw new ScannerException("while scanning a " + name,"expected '!', but found " + ch + "(" + (ch) + ")", "line number: " + lineNumber );
             }
             length++;
         }
@@ -1099,7 +1120,7 @@ public class Scanner {
         }
 
         if(chunks.length == 0) {
-            throw new ScannerException("while scanning a " + name,"expected URI, but found " + ch + "(" + (ch) + ")",null);
+            throw new ScannerException("while scanning a " + name,"expected URI, but found " + ch + "(" + (ch) + ")", "line number: " + lineNumber );
         }
         return chunks;
     }
@@ -1111,7 +1132,7 @@ public class Scanner {
             try {
                 bytes += int(prefix(2)).toString(16);
             } catch(nfe : Error) {
-                throw new ScannerException("while scanning a " + name,"expected URI escape sequence of 2 hexadecimal numbers, but found " + buffer.peek(1) + "(" + (buffer.peek(1)) + ") and "+ buffer.peek(2) + "(" + (buffer.peek(2)) + ")",null);
+                throw new ScannerException("while scanning a " + name,"expected URI escape sequence of 2 hexadecimal numbers, but found " + buffer.peek(1) + "(" + (buffer.peek(1)) + ") and "+ buffer.peek(2) + "(" + (buffer.peek(2)) + ")", "line number: " + lineNumber );
             }
             forwardBy(2);
         }
@@ -1132,6 +1153,7 @@ public class Scanner {
             } else {
                 forward(val);
             }
+            lineNumber++;
             return "\n";
         } else {
             return "";

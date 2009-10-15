@@ -51,6 +51,8 @@ public interface YAMLConfig {
     function usePlain(usePlain:Boolean):YAMLConfig;
     function useHeader(useHeader:Boolean):YAMLConfig;	
 	function getIndent():int
+	function getTags():Object
+	function setTags(value:Object):void
  
    
 
