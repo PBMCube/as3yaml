@@ -345,17 +345,25 @@ public class SafeConstructor extends BaseConstructor {
 
     public function constructActionscript(ctor : Constructor, pref : String, node : Node) : Object {
         var outp : Object = null;
+      
         try {
             var cl : Class = getDefinitionByName(pref) as Class;
             outp = new cl();
+            
             var values : Dictionary = Dictionary(ctor.constructMapping(node));
             for(var key : Object in values) {
-                var value : Object = values[key];
-				outp[key] = value;
-            } 
+            	try {
+               		var value : Object = values[key];
+					outp[key] = value;
+            	} catch(e : Error) {
+        			trace(e);
+        		}
+            }            
+            
         } catch(e : Error) {
-            throw new YAMLException("Can't construct actionscript object from class " + pref + ": " + e.toString());
+           trace(e);
         }
+                
         return outp;
     }
 

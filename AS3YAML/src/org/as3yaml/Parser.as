@@ -94,7 +94,7 @@ public class Parser {
 
     private var tags:Array;
     private var anchors:Array;
-    private var tagHandles:Dictionary;
+    private var tagHandles:Object;
     private var yamlVersion:Array;
     private var defaultYamlVersion:Array;
 
@@ -140,7 +140,7 @@ public class Parser {
 	            var tok : Token = scanner.peekToken();
 	            var directives : Array = processDirectives(scanner);
 	            if(!(scanner.peekToken() is DocumentStartToken)) {
-	                throw new ParserException(null,"expected '<document start>', but found " + getQualifiedClassName(tok),null);
+	                throw new ParserException(null,"expected '<document start>', but found " + tok, "line number: " + scanner.productionLineNumber());
 	            }
 	            scanner.getToken();
 	            return new DocumentStartEvent(true, directives[0], directives[1]);
@@ -214,7 +214,7 @@ public class Parser {
 //                    }
 //                    if(handle != null) {
 //                        if(!env.getTagHandles().containsKey(handle)) {
-//                            throw new ParserException("while parsing a node","found undefined tag handle " + handle,null);
+//                            throw new ParserException("while parsing a node","found undefined tag handle " + handle, "line number: " + scanner.productionLineNumber());
 //                        }
 //                        if((ix = suffix.indexOf("/")) != -1) {
 //                            var before : String = suffix.substring(0,ix);
@@ -254,7 +254,7 @@ public class Parser {
                 } else if(tok is ScalarToken) {
                     parseStack.unshift(P_SCALAR);
                 } else {
-                    throw new ParserException("while scanning a flow node","expected the node content, but found " + getQualifiedClassName(tok),null);
+                    throw new ParserException("while scanning a flow node","expected the node content, but found " + tok, "line number: " + scanner.productionLineNumber());
                 }
                 return null;
 	            
@@ -373,7 +373,7 @@ public class Parser {
                 var tok : Token = null;
                 if(!(scanner.peekToken() is BlockEndToken)) {
                     tok = scanner.peekToken();
-                    throw new ParserException("while scanning a block collection","expected <block end>, but found " + getQualifiedClassName(tok),null);
+                    throw new ParserException("while scanning a block collection","expected <block end>, but found " + tok, "line number: " + scanner.productionLineNumber());
                 }
                 scanner.getToken();
                 return SEQUENCE_END;
@@ -386,7 +386,7 @@ public class Parser {
 	       case P_BLOCK_MAPPING_END:
                 var tok : Token = scanner.peekToken();
                 if(!(tok is BlockEndToken)) {
-                    throw new ParserException("while scanning a block mapping","expected <block end>, but found " + getQualifiedClassName(tok),null);
+                    throw new ParserException("while scanning a block mapping","expected <block end>, but found " + tok, "line number: " + scanner.productionLineNumber());
                 }
                 scanner.getToken();
                 return MAPPING_END;
@@ -560,19 +560,19 @@ public class Parser {
             var tok : DirectiveToken = DirectiveToken(scanner.getToken());
             if(tok.getName() == ("YAML")) {
                 if(yamlVersion != null) {
-                    throw new ParserException(null,"found duplicate YAML directive",null);
+                    throw new ParserException(null,"found duplicate YAML directive", "line number: " + scanner.productionLineNumber());
                 }
                 var major : int = int(tok.getValue()[0]);
                 var minor : int = int(tok.getValue()[1]);
                 if(major != 1) {
-                    throw new ParserException(null,"found incompatible YAML document (version 1.* is required)",null);
+                    throw new ParserException(null,"found incompatible YAML document (version 1.* is required)", "line number: " + scanner.productionLineNumber());
                 }
                 yamlVersion = [major,minor];
             } else if(tok.getName() == ("TAG")) {
                 var handle : String = tok.getValue()[0];
                 var prefix : String = tok.getValue()[1];
                 if(tagHandles[handle]) {
-                    throw new ParserException(null,"duplicate tag handle " + handle,null);
+                   trace("duplicate tag handle", handle);
                 }
                 tagHandles[handle] = prefix;
             }
@@ -613,7 +613,7 @@ public class Parser {
         this.scanner = scanner;
         this.tags = [];
         this.anchors = [];
-        this.tagHandles = new Dictionary();
+        this.tagHandles = cfg.getTags() || new Dictionary();
         this.yamlVersion = null;
         this.defaultYamlVersion = [];
         this.defaultYamlVersion[0] = int(cfg.getVersion().substring(0,cfg.getVersion().indexOf('.')));
@@ -666,13 +666,6 @@ public class Parser {
         return value;
     }
 
-    public function eachEvent(parser : Parser) : EventIterator {
-        return new EventIterator(parser);
-    }
-
-    public function iterator() : EventIterator {
-        return eachEvent(this);
-    }
 
     private var parseStack : Array = null;
 
@@ -697,26 +690,4 @@ public class Parser {
     }
 
 }
-}
-	import org.as3yaml.Parser;
-	import org.as3yaml.events.Event;
-	
-
-internal class EventIterator {
-   
-   private var parser : Parser;
-   public function EventIterator (parser : Parser) : void{
-   	this.parser = parser;
-   }
-   
-    public function hasNext() : Boolean {
-        return null != parser.peekEvent();
-    }
-
-    public function next() : Event {
-        return parser.getEvent();
-    }
-
-    public function remove() : void {
-    }
 }

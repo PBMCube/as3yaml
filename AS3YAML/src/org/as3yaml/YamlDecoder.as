@@ -9,9 +9,9 @@ package org.as3yaml
 			this.yaml = yaml;
 		}
 
-	    public function decode () : Object
+	    public function decode (config: YAMLConfig = null) : Object
 	    {
-	    	var cfg: DefaultYAMLConfig = new DefaultYAMLConfig();
+	    	var cfg: YAMLConfig = config || new DefaultYAMLConfig();
 			var obj : Object = load(yaml, cfg);
 			
 			return obj;

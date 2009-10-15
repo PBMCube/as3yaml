@@ -22,10 +22,14 @@
 package org.as3yaml.tokens {
 	import flash.utils.getQualifiedClassName;
 	
+	import org.as3yaml.Scanner;
+	
 
 public class Token {
 
+	public var lineNumber: int;
     public function Token() {
+		lineNumber = Scanner.lineNumber;
     }
 
     public function setValue(value : String) : void {
