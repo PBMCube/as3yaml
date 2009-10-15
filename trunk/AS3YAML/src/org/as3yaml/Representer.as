@@ -213,10 +213,10 @@ internal class NumberYAMLNodeCreator implements YAMLNodeCreator {
     }
 
     public function taguri() : String {
-        if(data is Number) {
-            return "tag:yaml.org,2002:float";
+        if(data is int) {
+			return "tag:yaml.org,2002:int";            
         } else {
-            return "tag:yaml.org,2002:int";
+			return "tag:yaml.org,2002:float";
         }
     }
 
