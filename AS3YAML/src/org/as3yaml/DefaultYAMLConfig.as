@@ -67,6 +67,7 @@ public class DefaultYAMLConfig implements YAMLConfig {
     public function useBlock(useBlock:Boolean):YAMLConfig{ _useBlock = useBlock; return this; }
 
     public function useFlow(useFlow:Boolean):YAMLConfig{ _useFlow = useFlow; return this; }
+    public function getUseFlow(): Boolean { return _useFlow; }
 
     public function usePlain(usePlain:Boolean):YAMLConfig{ _usePlain = usePlain; return this; }
 

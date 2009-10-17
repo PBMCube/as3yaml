@@ -48,6 +48,7 @@ public interface YAMLConfig {
     function getBestWidth():int;
     function useBlock(useBlock:Boolean):YAMLConfig;
     function useFlow(useFlow:Boolean):YAMLConfig;
+    function getUseFlow(): Boolean;
     function usePlain(usePlain:Boolean):YAMLConfig;
     function useHeader(useHeader:Boolean):YAMLConfig;	
 	function getIndent():int

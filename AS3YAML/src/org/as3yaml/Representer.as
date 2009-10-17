@@ -32,10 +32,12 @@ public class Representer {
     private var serializer : Serializer;
     private var defaultStyle : String;
     private var representedObjects : Map;
+    private var config: YAMLConfig;
 
     public function Representer(serializer : Serializer, opts : YAMLConfig) : void {
         this.serializer = serializer;
         this.defaultStyle = opts.getUseDouble() ? '"' : (opts.getUseSingle() ? '\'' : '0');
+        this.config = opts;
         this.representedObjects = new HashMap();
     }
 
@@ -132,6 +134,9 @@ public class Representer {
         }
     }
 
+    public function getConfig(): YAMLConfig {
+        return config;
+    }
 
     }
 }
@@ -202,7 +207,7 @@ internal class ArrayYAMLNodeCreator implements YAMLNodeCreator {
         for(var i:int=0;i<l;i++) {
             lst.add(data[i]);
         }
-        return representer.seq(taguri(), lst, false);
+        return representer.seq(taguri(), lst, representer.getConfig().getUseFlow());
     }
 }
 

@@ -120,12 +120,13 @@ public class YAML {
 	 * 
 	 */	
 	
-	public static function encode(obj : Object) : String
+	public static function encode(obj : Object, config : YAMLConfig = null) : String
 	{
 		var lst : List = new ArrayList();
 		lst.add(obj);
+		config = config ? config : new DefaultYAMLConfig(); 
 		var yamlStr : StringWriter = new StringWriter();
-		YAML.dump(lst, yamlStr,	new DefaultYAMLFactory(), new DefaultYAMLConfig());
+		YAML.dump(lst, yamlStr,	new DefaultYAMLFactory(), config);
 		return yamlStr.toString();
 	}
 
